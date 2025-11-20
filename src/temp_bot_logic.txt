@@ -1,0 +1,136 @@
+      if (userInput.toLowerCase().includes('appointment') && 
+          (userInput.toLowerCase().includes('schedule') || 
+           userInput.toLowerCase().includes('book') || 
+           userInput.toLowerCase().includes('cancel') ||
+           userInput.toLowerCase().includes('reschedule') ||
+           userInput.toLowerCase().includes('change'))) {
+        // Route to staff for scheduling requests
+        botResponse = {
+          id: (Date.now() + 1).toString(),
+          sender: 'bot',
+          senderName: 'AI Assistant',
+          content: 'I\'m unable to provide an answer at this time, I will send this request to the practice now for review. You will get a response soon. Thanks!',
+          timestamp: new Date().toISOString(),
+          isRouted: true,
+          detectedIntent: 'appointment_scheduling'
+        };
+      } else if (userInput.toLowerCase().includes('appointment')) {
+        // Can handle appointment inquiries - acknowledge existence
+        botResponse = {
+          id: (Date.now() + 1).toString(),
+          sender: 'bot',
+          senderName: 'AI Assistant',
+          content: 'I can see you have an upcoming appointment with Dr. Sarah Smith on January 14th at 2:00 PM at Main Campus Medical Center. Your appointment is confirmed.',
+          timestamp: new Date().toISOString()
+        };
+      } else if (userInput.toLowerCase().includes('prescription') || 
+                 userInput.toLowerCase().includes('medication') ||
+                 userInput.toLowerCase().includes('refill')) {
+        // Can acknowledge prescription existence
+        botResponse = {
+          id: (Date.now() + 1).toString(),
+          sender: 'bot',
+          senderName: 'AI Assistant',
+          content: 'I can see you have an active prescription for Lisinopril 10mg. Your prescription is ready for pickup at Main Street Pharmacy. Refills remaining: 2.',
+          timestamp: new Date().toISOString()
+        };
+      } else if (userInput.toLowerCase().includes('lab') || 
+                 userInput.toLowerCase().includes('test results') ||
+                 userInput.toLowerCase().includes('blood work')) {
+        if (userInput.toLowerCase().includes('what') || 
+            userInput.toLowerCase().includes('result') ||
+            userInput.toLowerCase().includes('show') ||
+            userInput.toLowerCase().includes('value')) {
+          // Route for specific lab values/results
+          botResponse = {
+            id: (Date.now() + 1).toString(),
+            sender: 'bot',
+            senderName: 'AI Assistant',
+            content: 'I\'m unable to provide an answer at this time, I will send this request to the practice now for review. You will get a response soon. Thanks!',
+            timestamp: new Date().toISOString(),
+            isRouted: true,
+            detectedIntent: 'clinical_results'
+          };
+        } else {
+          // Can acknowledge existence with neutral status
+          botResponse = {
+            id: (Date.now() + 1).toString(),
+            sender: 'bot',
+            senderName: 'AI Assistant',
+            content: 'I see your lab work was ordered on January 10th. Your provider will review the results and contact you if any action is needed.',
+            timestamp: new Date().toISOString()
+          };
+        }
+      } else if (userInput.toLowerCase().includes('pain') || 
+                 userInput.toLowerCase().includes('symptom') ||
+                 userInput.toLowerCase().includes('sick') ||
+                 userInput.toLowerCase().includes('hurt') ||
+                 userInput.toLowerCase().includes('fever')) {
+        // Route medical symptoms to clinical staff
+        botResponse = {
+          id: (Date.now() + 1).toString(),
+          sender: 'bot',
+          senderName: 'AI Assistant',
+          content: 'I\'m unable to provide an answer at this time, I will send this request to the practice now for review. You will get a response soon. Thanks!',
+          timestamp: new Date().toISOString(),
+          isRouted: true,
+          detectedIntent: 'medical_symptom'
+        };
+      } else if (userInput.toLowerCase().includes('pay') || 
+                 userInput.toLowerCase().includes('payment') ||
+                 userInput.toLowerCase().includes('owe') ||
+                 userInput.toLowerCase().includes('balance')) {
+        // Route billing payment questions
+        botResponse = {
+          id: (Date.now() + 1).toString(),
+          sender: 'bot',
+          senderName: 'AI Assistant',
+          content: 'I\'m unable to provide an answer at this time, I will send this request to the practice now for review. You will get a response soon. Thanks!',
+          timestamp: new Date().toISOString(),
+          isRouted: true,
+          detectedIntent: 'billing_inquiry'
+        };
+      } else if (userInput.toLowerCase().includes('bill') || 
+                 userInput.toLowerCase().includes('insurance')) {
+        // Can provide operational billing info
+        botResponse = {
+          id: (Date.now() + 1).toString(),
+          sender: 'bot',
+          senderName: 'AI Assistant',
+          content: 'Our billing office is open Monday-Friday, 8:00 AM - 5:00 PM. You can reach them at (555) 123-4567. We accept most major insurance plans and offer payment plans if needed.',
+          timestamp: new Date().toISOString()
+        };
+      } else if (userInput.toLowerCase().includes('hours') || 
+                 userInput.toLowerCase().includes('open') ||
+                 userInput.toLowerCase().includes('location') ||
+                 userInput.toLowerCase().includes('address') ||
+                 userInput.toLowerCase().includes('directions')) {
+        // Provide operational help - hours and directions
+        botResponse = {
+          id: (Date.now() + 1).toString(),
+          sender: 'bot',
+          senderName: 'AI Assistant',
+          content: 'Main Campus Medical Center is located at 123 Health Plaza, Suite 200. We\'re open Monday-Friday 7:00 AM - 7:00 PM, Saturday 9:00 AM - 1:00 PM. Free parking is available in the north lot.',
+          timestamp: new Date().toISOString()
+        };
+      } else if (userInput.toLowerCase().includes('diabetes') ||
+                 userInput.toLowerCase().includes('blood pressure') ||
+                 userInput.toLowerCase().includes('cholesterol')) {
+        // Share general educational content
+        botResponse = {
+          id: (Date.now() + 1).toString(),
+          sender: 'bot',
+          senderName: 'AI Assistant',
+          content: 'I can provide general health information. For specific medical advice related to your condition, please consult with your healthcare provider. Would you like me to connect you with a nurse or schedule a consultation?',
+          timestamp: new Date().toISOString()
+        };
+      } else {
+        // Default response
+        botResponse = {
+          id: (Date.now() + 1).toString(),
+          sender: 'bot',
+          senderName: 'AI Assistant',
+          content: 'I\'m here to help! I can provide information about your appointments, lab orders, prescriptions, office hours, and directions. I can also help with general health questions. What would you like to know?',
+          timestamp: new Date().toISOString()
+        };
+      }

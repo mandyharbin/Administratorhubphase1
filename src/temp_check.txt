@@ -1,0 +1,1 @@
+className="flex-1 h-[50px] bg-white rounded-[5px] border border-[#c4c4c4] text-center text-[#333333] text-[32px] focus:outline-none focus:border-[#007cbe]"

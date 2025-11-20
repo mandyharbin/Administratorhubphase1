@@ -1,0 +1,1 @@
+Backup before major change - quick action buttons need to properly call handleSendMessage instead of duplicating logic
