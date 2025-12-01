@@ -8,6 +8,7 @@ import { Badge } from './ui/badge';
 import { Search, Filter, Download } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import { InfoBanner } from './InfoBanner';
 
 export function AuditLogs() {
   const auditLogs = [
@@ -30,6 +31,11 @@ export function AuditLogs() {
         <h2>Audit Logs & Metrics</h2>
         <p className="text-gray-600 mt-1">System activity logs and conversation metrics</p>
       </div>
+
+      <InfoBanner 
+        title="What is this section used for?"
+        description="View comprehensive audit trails of all administrator actions and system changes. Track who made changes, when they occurred, and what was modified. Also access conversation metrics to analyze AI performance, user satisfaction, and routing patterns."
+      />
 
       <Tabs defaultValue="audit" className="space-y-6">
         <TabsList>

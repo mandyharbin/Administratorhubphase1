@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Switch } from './ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import { InfoBanner } from './InfoBanner';
 
 export function DisclaimersConsent() {
   const [disclaimers, setDisclaimers] = useState([
@@ -91,6 +92,11 @@ export function DisclaimersConsent() {
         <h2>Disclaimers & Consent</h2>
         <p className="text-gray-600 mt-1">Manage versioned disclaimers and patient consent requirements</p>
       </div>
+
+      <InfoBanner 
+        title="What is this section used for?"
+        description="Create and manage versioned disclaimers, consent forms, and legal notices that patients must review before using the messaging system. Supports multi-language content, version tracking, and channel-specific delivery (Web, SMS, etc.)."
+      />
 
       <Tabs defaultValue="disclaimers" className="space-y-6">
         <TabsList>

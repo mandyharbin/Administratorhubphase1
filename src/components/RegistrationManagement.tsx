@@ -15,12 +15,20 @@ import {
   Filter,
   Users,
   UserCheck,
-  AlertCircle
+  AlertCircle,
+  Mail,
+  MessageSquare,
+  Eye,
+  ExternalLink
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { ScrollArea } from './ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
+import { projectId, publicAnonKey } from '../utils/supabase/info';
+import { PatientMatchesView } from './PatientMatchesView';
+import { InfoBanner } from './InfoBanner';
 
 interface RegistrationRecord {
   id: string;
@@ -268,6 +276,19 @@ export function RegistrationManagement() {
         </p>
       </div>
 
+      <InfoBanner 
+        title="What is this section used for?"
+        description="Track and manage patient self-registration requests initiated from the EHR or QR codes. Review registration details, verify identities, approve or reject access requests, and monitor authorized representative relationships."
+      />
+
+      {/* Tabs */}
+      <Tabs defaultValue="qr-tokens" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="qr-tokens">QR Token Registrations</TabsTrigger>
+          <TabsTrigger value="patient-matches">Patient Matches</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="qr-tokens" className="space-y-6">
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
@@ -553,6 +574,12 @@ export function RegistrationManagement() {
           </CardContent>
         </Card>
       )}
+        </TabsContent>
+
+        <TabsContent value="patient-matches" className="space-y-6">
+          <PatientMatchesView />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

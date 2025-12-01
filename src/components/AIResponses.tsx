@@ -4,6 +4,7 @@ import { Badge } from './ui/badge';
 import { Textarea } from './ui/textarea';
 import { Label } from './ui/label';
 import { Bot, Save, Edit2 } from 'lucide-react';
+import { InfoBanner } from './InfoBanner';
 
 export function AIResponses() {
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -69,6 +70,11 @@ export function AIResponses() {
           <p className="text-gray-500">Configure automated responses sent by the AI assistant</p>
         </div>
       </div>
+
+      <InfoBanner 
+        title="What is this section used for?"
+        description="Customize the automated messages sent by the AI Receptionist in specific scenarios, such as routing confirmations, after-hours responses, fallback messages, and appointment limitation notices. These messages support dynamic variables like {role}, {response_time}, and {office_phone}."
+      />
 
       <div className="bg-white rounded-lg border border-[#BDBDBD] p-6 space-y-6">
         <div>

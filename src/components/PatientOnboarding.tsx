@@ -10,6 +10,7 @@ import { Badge } from './ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { toast } from 'sonner@2.0.3';
 import { Toaster } from './ui/sonner';
+import { InfoBanner } from './InfoBanner';
 
 export function PatientOnboarding() {
   const [customMessage, setCustomMessage] = useState('');
@@ -92,6 +93,11 @@ Your Healthcare Team`;
             Manage patient app downloads, share resources, and track engagement
           </p>
         </div>
+
+        <InfoBanner 
+          title="What is this section used for?"
+          description="Facilitate patient adoption of the mobile app through QR codes, download links, and promotional materials. Send customized SMS or email invitations, generate printable resources for your office, and track onboarding metrics and app adoption rates."
+        />
 
         {/* Stats */}
         <div className="grid grid-cols-4 gap-4">

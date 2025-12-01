@@ -11,6 +11,7 @@ import { Switch } from './ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Textarea } from './ui/textarea';
 import { useState } from 'react';
+import { InfoBanner } from './InfoBanner';
 
 interface Article {
   id: string;
@@ -153,6 +154,11 @@ export function KnowledgeSources() {
         <h2>Knowledge Sources</h2>
         <p className="text-gray-600 mt-1">Manage knowledge base FAQs by role category</p>
       </div>
+
+      <InfoBanner 
+        title="What is this section used for?"
+        description="Build and maintain the knowledge base that powers the AI Receptionist. Create role-based FAQs, upload documents, manage content by category (Billing, Scheduling, Clinical, General), and track content performance with analytics on answer confidence and user feedback."
+      />
 
       {/* Info Banner */}
       <Card className="bg-blue-50 border-blue-200">

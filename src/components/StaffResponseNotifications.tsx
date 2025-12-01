@@ -8,6 +8,7 @@ import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { MessageSquare, Bell, MessageCircle, Smartphone, Save, AlertCircle, Mail } from 'lucide-react';
 import { Alert, AlertDescription } from './ui/alert';
+import { InfoBanner } from './InfoBanner';
 
 interface NotificationChannel {
   email: boolean;
@@ -92,6 +93,11 @@ export function StaffResponseNotifications() {
           Configure how patients are notified when staff responds to their AI assistant messages
         </p>
       </div>
+
+      <InfoBanner 
+        title="What is this section used for?"
+        description="Configure patient notification preferences when staff members respond to routed AI assistant conversations. Customize notification channels (email, SMS, push, in-app), set quiet hours, define message templates with variables, and specify which roles trigger notifications."
+      />
 
       {/* Save Alert */}
       {hasUnsavedChanges && (

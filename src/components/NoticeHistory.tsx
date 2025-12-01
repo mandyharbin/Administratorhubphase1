@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { useState } from 'react';
 import { PatientNotices } from './PatientNotices';
+import { InfoBanner } from './InfoBanner';
 
 interface NoticeRecord {
   id: string;
@@ -469,6 +470,11 @@ export function NoticeHistory({ onNavigateToNotices }: NoticeHistoryProps) {
           Create New Notice
         </Button>
       </div>
+
+      <InfoBanner 
+        title="What is this section used for?"
+        description="View the complete history of all patient notices sent via SMS, email, or push notifications. Track delivery status, engagement metrics, and access detailed reports for each communication campaign or automated message sent to patients."
+      />
 
       {/* Filters */}
       <Card>

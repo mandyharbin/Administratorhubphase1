@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
 import { MultiSelectFilter } from './MultiSelectFilter';
 import { NoticePreview } from './NoticePreview';
+import { FHIRVariablePicker } from './FHIRVariablePicker';
 import { Plus, Edit2, Trash2, Calendar, Clock, Filter, Mail, MessageSquare, Phone, Bell, AppWindow, Upload, Users, User, Eye } from 'lucide-react';
 
 interface NoticeTemplate {
@@ -288,7 +289,10 @@ export function NoticeTemplateManager({
   };
 
   const insertVariable = (variable: string) => {
-    setMessage(message + `{${variable}}`);
+    // If variable already has {{ }}, use it as-is (FHIR variables)
+    // Otherwise, wrap in single braces (legacy variables)
+    const formattedVariable = variable.startsWith('{{') ? variable : `{${variable}}`;
+    setMessage(message + formattedVariable);
   };
 
   const getTriggerLabel = (trigger: string) => {
@@ -787,6 +791,7 @@ export function NoticeTemplateManager({
               />
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-xs text-gray-600">Insert variables:</span>
+                <FHIRVariablePicker onInsertVariable={insertVariable} />
                 <Button
                   type="button"
                   variant="outline"

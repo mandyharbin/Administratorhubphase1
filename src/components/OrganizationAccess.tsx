@@ -13,6 +13,7 @@ import { Switch } from './ui/switch';
 import { Checkbox } from './ui/checkbox';
 import { toast } from 'sonner';
 import { InviteEmailPreview } from './InviteEmailPreview';
+import { InfoBanner } from './InfoBanner';
 
 export function OrganizationAccess() {
   const [locations, setLocations] = useState([
@@ -89,6 +90,11 @@ export function OrganizationAccess() {
         <h2>Organization & Access</h2>
         <p className="text-gray-600 mt-1">Manage your organization profile, locations, users, and permissions</p>
       </div>
+
+      <InfoBanner 
+        title="What is this section used for?"
+        description="This section allows you to configure your organization's structure, manage practice locations with patient-facing details, invite and manage staff users with role-based access, and define granular permissions for different roles across the platform."
+      />
 
       <Tabs defaultValue="profile" className="space-y-6">
         <TabsList>

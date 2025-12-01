@@ -1,0 +1,18 @@
+{
+  "success": true,
+  "message": "Task T-1101 (Complete New Patient Intake Form) marked as completed",
+  "taskId": "item-001",
+  "completedDate": "November 24, 2025",
+  "completedTime": "3:45 PM",
+  "patientId": "0efed85b-e8a2-417b-a1f4-6a30fd74e7c2",
+  "response": {
+    "taskId": "item-001",
+    "title": "Complete New Patient Intake Form",
+    "status": "completed",
+    "completedDate": "November 24, 2025",
+    "completedBy": "John Smith",
+    "responseId": "resp-001",
+    "formId": "Q-001",
+    "formName": "New Patient Intake"
+  }
+}

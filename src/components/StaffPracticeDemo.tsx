@@ -15,6 +15,8 @@ import { messageQueue, RoutedMessage, StaffReply } from '../utils/sharedMessages
 import { ScrollArea } from './ui/scroll-area';
 import PortalRegistrationMismatchTask from './PortalRegistrationMismatchTask';
 import { ClinicalAppointmentsView } from './ClinicalAppointmentsView';
+import { PreVisitFormCard } from './PreVisitFormCard';
+import { projectId, publicAnonKey } from '../utils/supabase/info';
 
 interface Priority {
   id: string;
@@ -67,6 +69,7 @@ export function StaffPracticeDemo() {
   const [suiteDropdownOpen, setSuiteDropdownOpen] = useState(false);
   const [activeSuite, setActiveSuite] = useState<'clinical' | 'revenue'>('revenue');
   const [activeNavSection, setActiveNavSection] = useState<'appointments' | 'patient-search' | 'tasks' | 'settings'>('appointments');
+  const [preVisitForms, setPreVisitForms] = useState<any[]>([]);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -377,6 +380,35 @@ export function StaffPracticeDemo() {
 
     // Cleanup subscription on component unmount
     return unsubscribe;
+  }, []);
+
+  // Fetch pre-visit forms for Sarah Johnson
+  useEffect(() => {
+    const fetchPreVisitForms = async () => {
+      try {
+        const response = await fetch(
+          `https://${projectId}.supabase.co/functions/v1/make-server-66fdb7c0/pre-visit-submissions/patient-001`,
+          {
+            headers: {
+              'Authorization': `Bearer ${publicAnonKey}`
+            }
+          }
+        );
+        
+        if (response.ok) {
+          const data = await response.json();
+          setPreVisitForms(data.submissions || []);
+        }
+      } catch (error) {
+        console.error('Error fetching pre-visit forms:', error);
+      }
+    };
+
+    fetchPreVisitForms();
+    
+    // Poll every 10 seconds for new submissions
+    const interval = setInterval(fetchPreVisitForms, 10000);
+    return () => clearInterval(interval);
   }, []);
 
   return (
@@ -713,6 +745,16 @@ export function StaffPracticeDemo() {
                     />
                   </div>
                 )}
+
+                {/* Pre-Visit Forms */}
+                {preVisitForms.map((form) => (
+                  <PreVisitFormCard
+                    key={form.id}
+                    submission={form}
+                    patientName="Sarah Johnson"
+                    appointmentDate="Nov 22, 2025"
+                  />
+                ))}
 
                 {messages.map((message) => (
                   <div key={message.id} className="p-6">

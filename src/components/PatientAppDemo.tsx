@@ -53,17 +53,33 @@ import {
   Smartphone,
   Fingerprint,
   Building2,
-  Monitor
+  Monitor,
+  Sparkles,
+  MessageSquare,
+  Eye,
+  EyeOff,
+  KeyRound,
+  IdCard
 } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Avatar, AvatarFallback } from './ui/avatar';
+import { ChatSummary } from './ChatSummary';
+import type { ChatMessage } from '../api/summary-agent';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { messageQueue, StaffReply } from '../utils/sharedMessages';
 import { toast } from 'sonner@2.0.3';
 import { Toaster } from './ui/sonner';
 import { projectId, publicAnonKey } from '../utils/supabase/info';
 import { knowledgeBaseFAQs } from '../utils/knowledgeBase';
+import { PatientMatchingFlow, type MatchedPatient } from './PatientMatchingFlow';
+import { ProxyRegistrationFlow, type ProxyRegistrationData } from './ProxyRegistrationFlow';
+import { HealthSummary } from './HealthSummary';
+import { LabResults } from './LabResults';
+import { MedicalHistory } from './MedicalHistory';
+import { AppointmentHistory } from './AppointmentHistory';
+import { VisitDetail } from './VisitDetail';
+import { greenwayOtpApi } from '../utils/greenwayOtpApi';
 
 type DemoScreen = 
   | 'app-download'
@@ -73,9 +89,12 @@ type DemoScreen =
   | 'location-verify'
   | 'practice-search'
   | 'registration-type'
+  | 'patient-matching'
+  | 'proxy-registration'
   | 'auth-rep-verify'
   | 'identity-verify'
   | 'verify-info'
+  | 'tcpa-consent'
   | 'email-verification'
   | 'pin-code'
   | 'email-confirmation'
@@ -92,7 +111,14 @@ type DemoScreen =
   | 'notifications'
   | 'messages'
   | 'survey'
-  | 'profile';
+  | 'profile'
+  | 'health-summary'
+  | 'lab-results'
+  | 'medical-history'
+  | 'appointment-history'
+  | 'visit-detail'
+  | 'todo-checklist'
+  | 'registration-link-sent';
 
 interface Message {
   id: string;
@@ -240,30 +266,58 @@ export function PatientAppDemo({ initialScreen = 'app-download' }: PatientAppDem
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [waitingForNotificationPreference, setWaitingForNotificationPreference] = useState(false);
+  const [waitingForSendConfirmation, setWaitingForSendConfirmation] = useState(false);
   const [selectedNotificationMethod, setSelectedNotificationMethod] = useState<string | null>(null);
   const [selectedPractice, setSelectedPractice] = useState<Practice | null>(null);
   const [qrPractice, setQrPractice] = useState<Practice | null>(null);
   const [isAuthRep, setIsAuthRep] = useState(false);
+  const [matchedPatient, setMatchedPatient] = useState<MatchedPatient | null>(null);
+  const [proxyRegistrationData, setProxyRegistrationData] = useState<ProxyRegistrationData | null>(null);
   const [showCallDialog, setShowCallDialog] = useState(false);
   const [showSurvey, setShowSurvey] = useState(false);
   const [showMenuDropdown, setShowMenuDropdown] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [showSummaryDialog, setShowSummaryDialog] = useState(false);
   const [showSwitchAccountDialog, setShowSwitchAccountDialog] = useState(false);
   const [showSignOutDialog, setShowSignOutDialog] = useState(false);
   const [currentUser, setCurrentUser] = useState<'mandy' | 'ava' | 'noah'>('mandy');
   const [settingsTab, setSettingsTab] = useState<'personal' | 'contact' | 'preferences' | 'security'>('personal');
   const [showAiChatDisclaimer, setShowAiChatDisclaimer] = useState(false);
+  const [verificationMismatch, setVerificationMismatch] = useState<{ entered: string; ehr: string } | null>(null);
+  const [contactMethod, setContactMethod] = useState<'sms' | 'email'>('sms');
+  const [contactInfo, setContactInfo] = useState('');
+  const [registrationRouted, setRegistrationRouted] = useState(false);
+  const [insuranceCardFiles, setInsuranceCardFiles] = useState<File[]>([]);
+  const [photoIdFile, setPhotoIdFile] = useState<File | null>(null);
+  const insuranceCardInputRef = useRef<HTMLInputElement>(null);
+  const photoIdInputRef = useRef<HTMLInputElement>(null);
+  const [isQRCodeFlow, setIsQRCodeFlow] = useState(false);
+  const [showSmsPreview, setShowSmsPreview] = useState(false);
+  
+  // Greenway OTP API states
+  const [otpRequestId, setOtpRequestId] = useState('');
+  const [otpRemainingAttempts, setOtpRemainingAttempts] = useState(5);
+  const [otpLockoutExpires, setOtpLockoutExpires] = useState<string | null>(null);
+  const [consentGiven, setConsentGiven] = useState(false);
+  
+  // Account creation states
+  const [accountUsername, setAccountUsername] = useState('');
+  const [accountPassword, setAccountPassword] = useState('');
+  const [accountConfirmPassword, setAccountConfirmPassword] = useState('');
+  const [accountTermsAccepted, setAccountTermsAccepted] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
   // Sign-in form states
   const [signInEmail, setSignInEmail] = useState('');
   const [signInPassword, setSignInPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
+  const [showSignInPassword, setShowSignInPassword] = useState(false);
   
   // Password creation states
   const [createPasswordValue, setCreatePasswordValue] = useState('');
   const [confirmPasswordValue, setConfirmPasswordValue] = useState('');
   const [showCreatePassword, setShowCreatePassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
   // Pending attachment states
   const [pendingImage, setPendingImage] = useState<string | null>(null);
@@ -286,7 +340,7 @@ export function PatientAppDemo({ initialScreen = 'app-download' }: PatientAppDem
     zipCode: '95653',
     identifierType: 'patientId',
     patientId: '',
-    billingAccountNumber: ''
+    billingAccountNumber: '67890'
   });
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [certifyChecked, setCertifyChecked] = useState(false);
@@ -730,6 +784,37 @@ export function PatientAppDemo({ initialScreen = 'app-download' }: PatientAppDem
     }
   };
 
+  const handleSendConfirmation = (confirmed: boolean) => {
+    // Add the Yes or No as a patient message
+    const selectionMessage: Message = {
+      id: Date.now().toString(),
+      sender: 'patient',
+      senderName: 'You',
+      content: confirmed ? 'Yes' : 'No',
+      timestamp: new Date().toISOString()
+    };
+    setChatMessages(prev => [...prev, selectionMessage]);
+    
+    // Clear the waiting flag
+    setWaitingForSendConfirmation(false);
+    
+    // If Yes, show the toast notification
+    if (confirmed) {
+      // Show toast notification for 8 seconds
+      setInAppNotification('This is a confirmation that your message has been received. Someone from our office will be in touch. If this is an emergency please dial 911. Thank you.');
+      
+      // Auto-hide notification after 8 seconds
+      setTimeout(() => {
+        setInAppNotification(null);
+      }, 8000);
+      
+      // Also show a quick success toast
+      toast.success('Message sent to practice', {
+        description: 'You will receive a response soon'
+      });
+    }
+  };
+
   const handleNotificationMethodSelect = (method: string) => {
     setSelectedNotificationMethod(method);
     setWaitingForNotificationPreference(false);
@@ -785,6 +870,7 @@ export function PatientAppDemo({ initialScreen = 'app-download' }: PatientAppDem
 
   const handleQrScan = () => {
     setQrScanned(true);
+    setIsQRCodeFlow(true);
     // Select the first practice by default from QR scan
     setSelectedPractice(practices[0]);
     setTimeout(() => setCurrentScreen('location-verify'), 1000);
@@ -813,33 +899,43 @@ export function PatientAppDemo({ initialScreen = 'app-download' }: PatientAppDem
 
   const handleRegistrationTypeSelect = (type: 'patient' | 'auth-rep') => {
     setIsAuthRep(type === 'auth-rep');
+    
     if (type === 'auth-rep') {
-      // Reset patient data for auth rep flow
-      setPatientData({
-        firstName: '',
-        lastName: '',
-        dob: '',
-        zipCode: '',
-        identifierType: 'patientId',
-        patientId: '',
-        billingAccountNumber: ''
-      });
-      setCertifyChecked(false);
-      setUploadedFile(null);
+      // Skip patient matching for auth-rep, go directly to identity verification
       setTimeout(() => setCurrentScreen('auth-rep-verify'), 500);
     } else {
-      // Reset patient data for regular patient flow
+      // Skip patient matching for patient, go directly to identity verification
+      setTimeout(() => setCurrentScreen('identity-verify'), 500);
+    }
+  };
+
+  const handlePatientMatchConfirmed = (patient: MatchedPatient) => {
+    setMatchedPatient(patient);
+    toast.success('Patient record matched successfully!');
+    
+    if (isAuthRep) {
+      // Go to proxy registration flow
+      setTimeout(() => setCurrentScreen('proxy-registration'), 500);
+    } else {
+      // Go to regular identity verification for patient
       setPatientData({
-        firstName: '',
-        lastName: '',
-        dob: '',
+        firstName: patient.name?.[0]?.given?.[0] || '',
+        lastName: patient.name?.[0]?.family || '',
+        dob: patient.birthDate || '',
         zipCode: '',
         identifierType: 'patientId',
-        patientId: '',
+        patientId: patient.id,
         billingAccountNumber: ''
       });
       setTimeout(() => setCurrentScreen('verify-info'), 500);
     }
+  };
+
+  const handleProxyRegistrationComplete = (data: ProxyRegistrationData) => {
+    setProxyRegistrationData(data);
+    toast.success('Proxy registration completed!');
+    // Continue to email verification or account setup
+    setTimeout(() => setCurrentScreen('email-verification'), 500);
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -856,8 +952,173 @@ export function PatientAppDemo({ initialScreen = 'app-download' }: PatientAppDem
     setTimeout(() => setCurrentScreen('verify-info'), 1000);
   };
 
-  const handleVerifyInfo = () => {
-    setTimeout(() => setCurrentScreen('email-verification'), 1000);
+  const handleVerifyInfo = async () => {
+    try {
+      // Validate required fields
+      if (!patientData.firstName || !patientData.lastName || !patientData.dob || !patientData.zipCode || !patientData.billingAccountNumber) {
+        toast.error('Please fill in all required fields');
+        return;
+      }
+
+      console.log('====== PATIENT VERIFICATION START ======');
+      console.log('[Verify] Patient Data Entered:', patientData);
+
+      setIsVerifying(true);
+      toast.loading('Verifying your information...');
+
+      const requestBody = {
+        healthlakeBase: 'https://demo-healthlake.example.com/fhir',
+        identifiers: [
+          {
+            system: 'http://hospital.example.org/billing-account',
+            value: patientData.billingAccountNumber
+          }
+        ],
+        family: patientData.lastName,
+        given: patientData.firstName,
+        birthDate: patientData.dob,
+      };
+
+      console.log('[Verify] API Request Body:', requestBody);
+
+      // Call patient matching API
+      const response = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/make-server-66fdb7c0/api/matchPatient`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${publicAnonKey}`,
+          },
+          body: JSON.stringify(requestBody),
+        }
+      );
+
+      console.log('[Verify] API Response Status:', response.status);
+
+      const data = await response.json();
+      console.log('[Verify] API Response Data:', data);
+      
+      toast.dismiss();
+      setIsVerifying(false);
+
+      if (data.matchType === 'deterministic' && data.matches?.length > 0) {
+        // Exact match found
+        const match = data.matches[0];
+        const ehrFirstName = match.name?.[0]?.given?.[0] || '';
+        
+        console.log('[Verify] Deterministic Match Found');
+        console.log('[Verify] Full Match Object:', match);
+        console.log('[Verify] EHR First Name:', ehrFirstName);
+        console.log('[Verify] Entered First Name:', patientData.firstName);
+        console.log('[Verify] Names Match?', ehrFirstName.toLowerCase() === patientData.firstName.toLowerCase());
+        
+        // Check if first name matches (case insensitive)
+        if (ehrFirstName.toLowerCase() !== patientData.firstName.toLowerCase()) {
+          // Name mismatch detected!
+          console.log('❌ [Patient Match] Name mismatch detected:', { entered: patientData.firstName, ehr: ehrFirstName });
+          toast.error(`Name mismatch: EHR shows "${ehrFirstName}" but you entered "${patientData.firstName}"`);
+          
+          // Store mismatch info for displaying help options
+          setVerificationMismatch({ entered: patientData.firstName, ehr: ehrFirstName });
+          setMatchedPatient(match);
+          
+          console.log('[Verify] Mismatch state set:', { entered: patientData.firstName, ehr: ehrFirstName });
+          console.log('[Verify] STOPPING - Not proceeding to next screen');
+          // Show error message and don't proceed
+          return;
+        }
+        
+        setMatchedPatient(match);
+        toast.success('Patient record found and verified!');
+        console.log('✅ [Patient Match] Found deterministic match:', match);
+      } else if (data.matchType === 'fuzzy' && data.candidates?.length > 0) {
+        // Potential matches found
+        const topCandidate = data.candidates[0];
+        const ehrFirstName = topCandidate.patient.name?.[0]?.given?.[0] || '';
+        
+        console.log('[Verify] Fuzzy Match Found');
+        console.log('[Verify] Full Candidate Object:', topCandidate);
+        console.log('[Verify] EHR First Name:', ehrFirstName);
+        console.log('[Verify] Entered First Name:', patientData.firstName);
+        console.log('[Verify] Names Match?', ehrFirstName.toLowerCase() === patientData.firstName.toLowerCase());
+        
+        // Check if first name matches (case insensitive)
+        if (ehrFirstName.toLowerCase() !== patientData.firstName.toLowerCase()) {
+          // Name mismatch detected!
+          console.log('❌ [Patient Match] Name mismatch detected in fuzzy match:', { entered: patientData.firstName, ehr: ehrFirstName });
+          toast.error(`Name mismatch: EHR shows "${ehrFirstName}" but you entered "${patientData.firstName}"`);
+          
+          // Store mismatch info for displaying help options
+          setVerificationMismatch({ entered: patientData.firstName, ehr: ehrFirstName });
+          setMatchedPatient(topCandidate.patient);
+          
+          console.log('[Verify] Mismatch state set:', { entered: patientData.firstName, ehr: ehrFirstName });
+          console.log('[Verify] STOPPING - Not proceeding to next screen');
+          // Show error message and don't proceed
+          return;
+        }
+        
+        setMatchedPatient(topCandidate.patient);
+        toast.success(`Patient record matched (${topCandidate.confidence} confidence)`);
+        console.log('✅ [Patient Match] Found fuzzy match:', topCandidate);
+      } else {
+        // No match found - this is a new patient
+        console.log('ℹ️ [Patient Match] No match found - new patient registration');
+        toast.success('Information verified - creating new account');
+      }
+
+      console.log('[Verify] Proceeding to TCPA consent screen');
+      // Continue to TCPA consent before OTP
+      setTimeout(() => setCurrentScreen('tcpa-consent'), 1000);
+    } catch (error) {
+      console.error('[Patient Match] Error during verification:', error);
+      toast.dismiss();
+      setIsVerifying(false);
+      toast.error('Verification failed. Please try again.');
+    }
+  };
+
+  const handleRouteToStaff = async () => {
+    if (!contactInfo.trim()) {
+      toast.error('Please enter your contact information');
+      return;
+    }
+
+    try {
+      // Create a message in the staff workflow
+      const newMessage: Message = {
+        id: `msg-${Date.now()}`,
+        conversationId: 'conv-001',
+        senderId: 'system',
+        senderName: 'Registration System',
+        recipientId: 'staff',
+        content: `REGISTRATION MISMATCH ALERT\n\nPatient attempted registration but identity verification failed.\n\nEntered Information:\n- Name: ${patientData.firstName} ${patientData.lastName}\n- DOB: ${patientData.dob}\n- ZIP: ${patientData.zipCode}\n- Billing Account: ${patientData.billingAccountNumber}\n\nEHR Match Found:\n- Name: ${verificationMismatch?.ehr} ${patientData.lastName}\n- DOB: ${patientData.dob}\n\nPreferred Contact Method: ${contactMethod.toUpperCase()}\nContact Info: ${contactInfo}\n\nPlease reach out to verify identity and assist with registration.`,
+        timestamp: new Date().toISOString(),
+        read: false,
+        type: 'text',
+        priority: 'high'
+      };
+
+      // Send to message queue
+      await fetch(
+        `https://${projectId}.supabase.co/functions/v1/make-server-66fdb7c0/api/messages`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${publicAnonKey}`,
+          },
+          body: JSON.stringify(newMessage),
+        }
+      );
+
+      setRegistrationRouted(true);
+      toast.success('Your request has been sent to the practice');
+    } catch (error) {
+      console.error('Error routing to staff:', error);
+      toast.error('Failed to send request. Please try again.');
+    }
   };
 
   const handleDisclaimerAccept = () => {
@@ -985,127 +1246,7 @@ export function PatientAppDemo({ initialScreen = 'app-download' }: PatientAppDem
       return; // Skip AI response
     }
 
-    console.log('[handleSendMessage] Calling AI API with userInput:', userInput);
-    
-    try {
-      // Call ChatGPT API through our server
-      const currentAccount = accounts[currentUser];
-      const response = await fetch(`https://${projectId}.supabase.co/functions/v1/make-server-66fdb7c0/chat`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${publicAnonKey}`
-        },
-        body: JSON.stringify({
-          messages: chatMessages.filter(msg => msg.sender !== 'staff'), // Exclude staff messages from context
-          userMessage: userInput,
-          patientContext: {
-            firstName: currentAccount.firstName,
-            lastName: currentAccount.lastName,
-            medications: currentAccount.medications || []
-          },
-          knowledgeBase: knowledgeBaseFAQs
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('ChatGPT API error:', errorData);
-        throw new Error('Failed to get AI response');
-      }
-
-      const data = await response.json();
-      
-      console.log('[handleSendMessage] AI Response:', data);
-      
-      const botResponse: Message = {
-        id: (Date.now() + 1).toString(),
-        sender: 'bot',
-        senderName: 'AI Assistant',
-        content: data.response,
-        timestamp: new Date().toISOString(),
-        isRouted: data.shouldRoute,
-        detectedIntent: data.detectedIntent
-      };
-
-      console.log('[handleSendMessage] botResponse:', botResponse);
-
-      // If routed, show in-app notification and bot routing message
-      if (botResponse.isRouted) {
-        console.log('[handleSendMessage] Message is ROUTED - adding bot response and waiting for notification preference');
-        // Add the bot's routing response to the chat
-        setChatMessages(prev => [...prev, botResponse]);
-        
-        // Set flag to show notification preference options
-        setWaitingForNotificationPreference(true);
-        
-        // Generate AI summary based on detected intent
-        let aiSummary = '';
-        switch (botResponse.detectedIntent) {
-          case 'appointment_scheduling':
-            aiSummary = 'Patient requesting appointment scheduling/cancellation. AI cannot handle scheduling changes per protocol. Requires staff intervention.';
-            break;
-          case 'clinical_results':
-            aiSummary = 'Patient inquiring about lab/test results. Contains medical information that requires clinical review. Routed to clinical staff.';
-            break;
-          case 'billing_inquiry':
-            aiSummary = 'Patient has billing/payment question. Requires access to billing system and account details. Routed to billing department.';
-            break;
-          case 'medical_symptom':
-            aiSummary = 'Patient reporting medical symptoms. Clinical assessment needed. Routed to clinical staff for evaluation.';
-            break;
-          case 'image_upload':
-            aiSummary = 'Patient uploaded image for clinical review. Visual assessment required. Routed to clinical staff.';
-            break;
-          default:
-            aiSummary = 'General inquiry routed to staff for personalized response.';
-        }
-
-        // Send to message queue with full conversation context including bot routing message
-        const currentConversation = [...chatMessages, newMessage, botResponse].map(msg => ({
-          sender: msg.sender,
-          senderName: msg.senderName,
-          content: msg.content,
-          timestamp: msg.timestamp,
-          imageUrl: msg.imageUrl,
-          fileUrl: msg.fileUrl,
-          fileName: msg.fileName,
-          fileType: msg.fileType,
-          fileSize: msg.fileSize
-        }));
-
-        messageQueue.addMessage({
-          id: `routed-${Date.now()}`,
-          patientName: `${patientData.firstName} ${patientData.lastName}`,
-          patientMessage: userInput,
-          aiSummary: aiSummary,
-          detectedIntent: botResponse.detectedIntent || 'general',
-          conversationHistory: currentConversation.map(msg => ({
-            sender: msg.sender,
-            content: msg.content,
-            timestamp: msg.timestamp
-          })),
-          timestamp: new Date().toISOString(),
-          urgency: 'urgent'
-        });
-
-        // Do NOT simulate staff response - staff will respond from the admin interface
-      } else {
-        // For non-routed messages, add the bot response to chat
-        setChatMessages(prev => [...prev, botResponse]);
-      }
-    } catch (error) {
-      console.error('Error calling ChatGPT API:', error);
-      // Fallback to a generic error message
-      const errorResponse: Message = {
-        id: (Date.now() + 1).toString(),
-        sender: 'bot',
-        senderName: 'AI Assistant',
-        content: 'I\'m having trouble connecting right now. Please try again in a moment.',
-        timestamp: new Date().toISOString()
-      };
-      setChatMessages(prev => [...prev, errorResponse]);
-    }
+    console.log('[handleSendMessage] Message sent - no AI auto-reply');
   };
 
   // Helper function to send a quick message from buttons
@@ -1655,17 +1796,17 @@ export function PatientAppDemo({ initialScreen = 'app-download' }: PatientAppDem
                   <label className="text-sm">Password</label>
                   <div className="relative">
                     <input
-                      type={showPassword ? "text" : "password"}
+                      type={showSignInPassword ? "text" : "password"}
                       placeholder="Password"
                       value={signInPassword}
                       onChange={(e) => setSignInPassword(e.target.value)}
                       className="w-full px-5 py-2.5 border border-gray-300 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
                     />
                     <button
-                      onClick={() => setShowPassword(!showPassword)}
+                      onClick={() => setShowSignInPassword(!showSignInPassword)}
                       className="absolute right-5 top-1/2 -translate-y-1/2 text-xs text-teal-600"
                     >
-                      {showPassword ? 'HIDE' : 'SHOW'}
+                      {showSignInPassword ? 'HIDE' : 'SHOW'}
                     </button>
                   </div>
                 </div>
@@ -1695,8 +1836,9 @@ export function PatientAppDemo({ initialScreen = 'app-download' }: PatientAppDem
                   disabled={!canSignIn}
                   onClick={() => {
                     if (canSignIn) {
-                      // Sign in and go to biometrics setup
-                      setCurrentScreen('biometrics');
+                      // Sign in successful - show success toast and go to home
+                      toast.success('Signed in successfully!');
+                      setTimeout(() => setCurrentScreen('home'), 500);
                     }
                   }}
                 >
@@ -1804,7 +1946,10 @@ export function PatientAppDemo({ initialScreen = 'app-download' }: PatientAppDem
                 <Button 
                   size="lg" 
                   className="w-full"
-                  onClick={() => setCurrentScreen('qr-scan')}
+                  onClick={() => {
+                    setIsQRCodeFlow(true);
+                    setCurrentScreen('qr-scan');
+                  }}
                 >
                   <QrCode className="w-5 h-5 mr-2" />
                   Scan QR Code
@@ -1819,7 +1964,10 @@ export function PatientAppDemo({ initialScreen = 'app-download' }: PatientAppDem
                 <Button 
                   size="lg" 
                   className="w-full bg-teal-600 hover:bg-teal-700"
-                  onClick={() => setCurrentScreen('practice-search')}
+                  onClick={() => {
+                    setIsQRCodeFlow(false);
+                    setCurrentScreen('practice-search');
+                  }}
                 >
                   Create Account
                 </Button>
@@ -2357,6 +2505,64 @@ export function PatientAppDemo({ initialScreen = 'app-download' }: PatientAppDem
     );
   }
 
+  // Patient Matching Screen
+  if (currentScreen === 'patient-matching') {
+    return (
+      <>
+        <Toaster />
+        <div className="space-y-6">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <h2>Patient App Demo</h2>
+          <p className="text-gray-600 mt-1">
+            Navigate through the patient experience
+          </p>
+        </motion.div>
+
+        <MobileFrame>
+          <PatientMatchingFlow 
+            onBack={() => setCurrentScreen('registration-type')}
+            onMatchConfirmed={handlePatientMatchConfirmed}
+            isAuthRep={isAuthRep}
+          />
+        </MobileFrame>
+        </div>
+      </>
+    );
+  }
+
+  // Proxy Registration Screen
+  if (currentScreen === 'proxy-registration' && matchedPatient) {
+    return (
+      <>
+        <Toaster />
+        <div className="space-y-6">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <h2>Patient App Demo</h2>
+          <p className="text-gray-600 mt-1">
+            Navigate through the patient experience
+          </p>
+        </motion.div>
+
+        <MobileFrame>
+          <ProxyRegistrationFlow 
+            onBack={() => setCurrentScreen('patient-matching')}
+            onRegistrationComplete={handleProxyRegistrationComplete}
+            matchedPatient={matchedPatient}
+          />
+        </MobileFrame>
+        </div>
+      </>
+    );
+  }
+
   // Auth Rep Verify Screen
   if (currentScreen === 'auth-rep-verify') {
     return (
@@ -2695,12 +2901,19 @@ export function PatientAppDemo({ initialScreen = 'app-download' }: PatientAppDem
                 <Shield className="w-8 h-8 text-white" />
               </div>
               
-              <h3 className="text-center mb-2">{isAuthRep ? 'Patient Identity Verification' : 'Hi David,'}</h3>
+              <h3 className="text-center mb-2">
+                {isAuthRep 
+                  ? 'Patient Identity Verification' 
+                  : isQRCodeFlow 
+                    ? `Hi ${patientData.firstName || 'there'},` 
+                    : 'Identity Verification'}
+              </h3>
               <p className="text-sm text-gray-600 text-center mb-6">
                 {isAuthRep ? 'Verify the patient information' : 'Confirm your identity to continue'}
               </p>
 
               <div className="space-y-4">
+            {qrPractice && (
             <div className="p-4 bg-green-50 border-l-4 border-green-500 rounded">
               <div className="flex gap-2">
                 <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
@@ -2714,6 +2927,7 @@ export function PatientAppDemo({ initialScreen = 'app-download' }: PatientAppDem
                 </div>
               </div>
             </div>
+            )}
 
             <div className="text-sm text-gray-700">
               {isAuthRep 
@@ -2764,7 +2978,13 @@ export function PatientAppDemo({ initialScreen = 'app-download' }: PatientAppDem
                 variant="ghost" 
                 size="sm" 
                 className="text-white hover:bg-teal-700 -ml-2"
-                onClick={() => setCurrentScreen('identity-verify')}
+                onClick={() => {
+                  setCurrentScreen('identity-verify');
+                  setVerificationMismatch(null);
+                  setRegistrationRouted(false);
+                  setContactInfo('');
+                  setContactMethod('sms');
+                }}
               >
                 <ChevronLeft className="w-5 h-5" />
               </Button>
@@ -2870,15 +3090,746 @@ export function PatientAppDemo({ initialScreen = 'app-download' }: PatientAppDem
                 className="w-full" 
                 size="lg"
                 onClick={handleVerifyInfo}
+                disabled={isVerifying || registrationRouted}
               >
-                Verify & Continue
+                {isVerifying ? 'Verifying...' : 'Verify & Continue'}
               </Button>
+              
+              {verificationMismatch && !registrationRouted && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 space-y-4">
+                  <div className="flex gap-2">
+                    <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                    <div className="text-sm text-red-900">
+                      <strong>Unable to Verify Registration</strong>
+                      <p className="mt-1">
+                        We're unable to complete your registration at this time. This has been routed to the practice. Select your preferred contact method below and they will reach out if there are questions.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => setContactMethod('sms')}
+                        className={`flex-1 p-3 rounded-lg border-2 transition-all ${
+                          contactMethod === 'sms'
+                            ? 'border-blue-600 bg-blue-50'
+                            : 'border-gray-200 bg-white hover:border-gray-300'
+                        }`}
+                      >
+                        <div className="flex flex-col items-center gap-1">
+                          <Phone className="w-5 h-5" />
+                          <span className="text-sm font-medium">SMS</span>
+                        </div>
+                      </button>
+                      <button
+                        onClick={() => setContactMethod('email')}
+                        className={`flex-1 p-3 rounded-lg border-2 transition-all ${
+                          contactMethod === 'email'
+                            ? 'border-blue-600 bg-blue-50'
+                            : 'border-gray-200 bg-white hover:border-gray-300'
+                        }`}
+                      >
+                        <div className="flex flex-col items-center gap-1">
+                          <Mail className="w-5 h-5" />
+                          <span className="text-sm font-medium">Email</span>
+                        </div>
+                      </button>
+                    </div>
+
+                    <input
+                      type="text"
+                      placeholder={contactMethod === 'sms' ? 'Enter your phone number' : 'Enter your email address'}
+                      value={contactInfo}
+                      onChange={(e) => setContactInfo(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                    />
+
+                    <Button 
+                      className="w-full" 
+                      onClick={handleRouteToStaff}
+                    >
+                      Submit Contact Information
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {registrationRouted && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <div className="flex gap-2">
+                    <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                    <div className="text-sm text-green-900">
+                      <strong>Request Submitted</strong>
+                      <p className="mt-1">
+                        Your information has been sent to the practice. They will contact you via {contactMethod === 'sms' ? 'SMS' : 'email'} at {contactInfo} to verify your identity and complete registration.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
             </div>
             </ScrollArea>
           </div>
         </MobileFrame>
       </div>
+      </>
+    );
+  }
+
+  // TCPA Consent Screen
+  if (currentScreen === 'tcpa-consent') {
+    const phoneNumber = matchedPatient?.telecom?.find(t => t.system === 'phone')?.value || '+1 (555) 123-4567';
+    
+    return (
+      <>
+        <Toaster />
+        <div className="space-y-6">
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <h2>Patient App Demo</h2>
+            <p className="text-gray-600 mt-1">
+              Navigate through the patient experience
+            </p>
+          </motion.div>
+
+          <MobileFrame>
+            <div className="h-full flex flex-col bg-white">
+              {/* Header */}
+              <div className="bg-teal-600 text-white p-4 flex items-center justify-between">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-white hover:bg-teal-700 -ml-2"
+                  onClick={() => setCurrentScreen('verify-info')}
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </Button>
+                <h3 className="text-base">SMS Consent</h3>
+                <div className="w-8"></div>
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 overflow-y-auto">
+                <div className="p-4 space-y-6 pb-6">
+                  {/* Demo helper */}
+                  <div className="bg-purple-50 border-l-4 border-purple-500 rounded p-4">
+                    <div className="flex gap-2">
+                      <AlertCircle className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
+                      <div className="text-sm">
+                        <strong className="text-purple-900">Demo Mode</strong>
+                        <p className="text-purple-700 mt-1">
+                          After accepting consent, the OTP code will be shown in a toast message and logged to the browser console for testing.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Info banner */}
+                  <div className="bg-blue-50 border-l-4 border-blue-500 rounded p-4">
+                    <div className="flex gap-2">
+                      <Smartphone className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                      <div className="text-sm">
+                        <strong className="text-blue-900">SMS Verification Required</strong>
+                        <p className="text-blue-700 mt-1">
+                          To verify your identity and secure your account, we'll send a verification code via SMS to {phoneNumber}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* TCPA Consent */}
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="font-semibold mb-2">Text Message Consent</h4>
+                      <p className="text-sm text-gray-600">
+                        By providing your phone number and checking the box below, you consent to receive text messages from Madison Medical Center P.A. and BASE Health, including:
+                      </p>
+                    </div>
+
+                    <div className="bg-gray-50 rounded-lg p-4 space-y-2 text-sm text-gray-700">
+                      <div className="flex gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-teal-600 flex-shrink-0 mt-0.5" />
+                        <span>Account verification codes</span>
+                      </div>
+                      <div className="flex gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-teal-600 flex-shrink-0 mt-0.5" />
+                        <span>Appointment reminders</span>
+                      </div>
+                      <div className="flex gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-teal-600 flex-shrink-0 mt-0.5" />
+                        <span>Important health updates</span>
+                      </div>
+                      <div className="flex gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-teal-600 flex-shrink-0 mt-0.5" />
+                        <span>Service notifications</span>
+                      </div>
+                    </div>
+
+                    {/* Legal text */}
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                      <p className="text-xs text-gray-700 leading-relaxed">
+                        <strong>TCPA Compliance:</strong> You understand that:
+                      </p>
+                      <ul className="text-xs text-gray-600 mt-2 space-y-1 ml-4">
+                        <li>• Consent is not a condition of purchase</li>
+                        <li>• Message and data rates may apply</li>
+                        <li>• Message frequency varies</li>
+                        <li>• You can opt-out anytime by replying STOP</li>
+                        <li>• Reply HELP for assistance</li>
+                      </ul>
+                    </div>
+
+                    {/* Checkbox consent */}
+                    <div className="flex items-start gap-3 p-4 border-2 border-gray-200 rounded-lg hover:border-teal-500 transition-colors">
+                      <Checkbox 
+                        id="sms-consent"
+                        checked={consentGiven}
+                        onCheckedChange={(checked) => setConsentGiven(checked === true)}
+                      />
+                      <label 
+                        htmlFor="sms-consent"
+                        className="text-sm text-gray-700 leading-relaxed cursor-pointer"
+                      >
+                        I consent to receive text messages from Madison Medical Center P.A. and BASE Health at <strong>{phoneNumber}</strong>. I understand I can opt-out at any time.
+                      </label>
+                    </div>
+
+                    {/* Privacy policy link */}
+                    <div className="text-center">
+                      <button 
+                        className="text-xs text-teal-600 hover:text-teal-700 underline"
+                        onClick={() => toast.info('Privacy policy would open here')}
+                      >
+                        View Privacy Policy & Terms
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="p-4 border-t space-y-2">
+                <Button 
+                  className="w-full bg-teal-600 hover:bg-teal-700"
+                  disabled={!consentGiven}
+                  onClick={async () => {
+                    try {
+                      toast.loading('Recording consent...');
+                      
+                      // Capture consent via Greenway API
+                      await greenwayOtpApi.captureConsent({
+                        phone: phoneNumber,
+                        userId: matchedPatient?.id,
+                        consentGiven: true,
+                        consentMethod: 'in-app',
+                        ip: '192.168.1.1', // Would be real IP in production
+                        userAgent: navigator.userAgent
+                      });
+
+                      toast.dismiss();
+                      toast.success('Consent recorded!');
+                      
+                      // Request OTP
+                      setTimeout(async () => {
+                        try {
+                          toast.loading('Sending verification code...');
+                          
+                          const otpResponse = await greenwayOtpApi.requestOtp({
+                            phone: phoneNumber,
+                            userId: matchedPatient?.id,
+                            purpose: 'registration',
+                            channel: 'sms',
+                            correlationId: crypto.randomUUID()
+                          });
+
+                          setOtpRequestId(otpResponse.requestId);
+                          setOtpRemainingAttempts(5);
+                          
+                          toast.dismiss();
+                          
+                          // Log the OTP code for demo purposes
+                          const demoCode = greenwayOtpApi.getOtpCode(otpResponse.requestId);
+                          console.log(`[DEMO] OTP Code: ${demoCode}`);
+                          console.log(`%c🔐 DEMO OTP CODE: ${demoCode}`, 'background: #0d9488; color: white; padding: 8px 16px; font-size: 16px; font-weight: bold; border-radius: 4px;');
+                          
+                          // Show multiple toasts to ensure visibility
+                          toast.success('Verification code sent to ' + phoneNumber);
+                          setTimeout(() => {
+                            toast.info(`Your verification code is: ${demoCode}`, { duration: 15000 });
+                          }, 500);
+                          
+                          setCurrentScreen('pin-code');
+                        } catch (error: any) {
+                          toast.dismiss();
+                          if (error.status === 429) {
+                            toast.error(`Rate limited. Please wait ${error.retryAfter} seconds.`);
+                          } else {
+                            toast.error(error.error || 'Failed to send OTP');
+                          }
+                        }
+                      }, 1000);
+                    } catch (error: any) {
+                      toast.dismiss();
+                      toast.error(error.error || 'Failed to record consent');
+                    }
+                  }}
+                >
+                  Accept & Send Verification Code
+                </Button>
+                
+                <Button 
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => {
+                    toast.error('SMS consent is required to continue registration');
+                  }}
+                >
+                  Decline
+                </Button>
+              </div>
+            </div>
+          </MobileFrame>
+        </div>
+      </>
+    );
+  }
+
+  // Create Account Screen
+  if (currentScreen === 'create-account') {
+    const passwordStrength = () => {
+      if (!accountPassword) return { score: 0, label: '', color: '' };
+      let score = 0;
+      if (accountPassword.length >= 8) score++;
+      if (/[a-z]/.test(accountPassword) && /[A-Z]/.test(accountPassword)) score++;
+      if (/\d/.test(accountPassword)) score++;
+      if (/[^a-zA-Z\d]/.test(accountPassword)) score++;
+      
+      if (score <= 1) return { score, label: 'Weak', color: 'bg-red-500' };
+      if (score === 2) return { score, label: 'Fair', color: 'bg-orange-500' };
+      if (score === 3) return { score, label: 'Good', color: 'bg-yellow-500' };
+      return { score, label: 'Strong', color: 'bg-green-500' };
+    };
+
+    const strength = passwordStrength();
+    const passwordsMatch = accountPassword && accountConfirmPassword && accountPassword === accountConfirmPassword;
+    const canSubmit = accountUsername && accountPassword && passwordsMatch && accountTermsAccepted && strength.score >= 2;
+
+    return (
+      <>
+        <Toaster />
+        <div className="space-y-6">
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <h2>Patient App Demo</h2>
+            <p className="text-gray-600 mt-1">
+              Navigate through the patient experience
+            </p>
+          </motion.div>
+
+          <MobileFrame>
+            <div className="h-full flex flex-col bg-white">
+              {/* Header */}
+              <div className="bg-teal-600 text-white p-4 flex items-center justify-between">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-white hover:bg-teal-700 -ml-2"
+                  onClick={() => setCurrentScreen('pin-code')}
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </Button>
+                <h3 className="text-base">Create Account</h3>
+                <div className="w-8"></div>
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 overflow-y-auto">
+                <div className="p-4 space-y-6 pb-6">
+                  {/* Success banner */}
+                  <div className="bg-green-50 border-l-4 border-green-500 rounded p-4">
+                    <div className="flex gap-2">
+                      <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                      <div className="text-sm">
+                        <strong className="text-green-900">Phone Verified</strong>
+                        <p className="text-green-700 mt-1">
+                          Your phone number has been verified. Now create your account to get started.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Username field */}
+                  <div className="space-y-2">
+                    <Label htmlFor="username">Username or Email</Label>
+                    <Input
+                      id="username"
+                      type="text"
+                      placeholder="Enter username or email"
+                      value={accountUsername}
+                      onChange={(e) => setAccountUsername(e.target.value)}
+                      className="w-full"
+                    />
+                    <p className="text-xs text-gray-500">
+                      This will be used to sign in to your account
+                    </p>
+                  </div>
+
+                  {/* Password field */}
+                  <div className="space-y-2">
+                    <Label htmlFor="password">Password</Label>
+                    <div className="relative">
+                      <Input
+                        id="password"
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder="Create a strong password"
+                        value={accountPassword}
+                        onChange={(e) => setAccountPassword(e.target.value)}
+                        className="w-full pr-10"
+                      />
+                      <button
+                        type="button"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                    
+                    {/* Password strength indicator */}
+                    {accountPassword && (
+                      <div className="space-y-1">
+                        <div className="flex gap-1">
+                          {[1, 2, 3, 4].map((level) => (
+                            <div
+                              key={level}
+                              className={`h-1 flex-1 rounded ${
+                                level <= strength.score ? strength.color : 'bg-gray-200'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        <p className={`text-xs ${
+                          strength.score <= 1 ? 'text-red-600' :
+                          strength.score === 2 ? 'text-orange-600' :
+                          strength.score === 3 ? 'text-yellow-600' :
+                          'text-green-600'
+                        }`}>
+                          Password strength: {strength.label}
+                        </p>
+                      </div>
+                    )}
+                    
+                    <div className="bg-gray-50 rounded p-3 text-xs text-gray-600 space-y-1">
+                      <p className="font-semibold">Password must include:</p>
+                      <ul className="space-y-0.5 ml-3">
+                        <li className={accountPassword.length >= 8 ? 'text-green-600' : ''}>
+                          • At least 8 characters
+                        </li>
+                        <li className={/[a-z]/.test(accountPassword) && /[A-Z]/.test(accountPassword) ? 'text-green-600' : ''}>
+                          • Upper and lowercase letters
+                        </li>
+                        <li className={/\d/.test(accountPassword) ? 'text-green-600' : ''}>
+                          • At least one number
+                        </li>
+                        <li className={/[^a-zA-Z\d]/.test(accountPassword) ? 'text-green-600' : ''}>
+                          • At least one special character
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  {/* Confirm password field */}
+                  <div className="space-y-2">
+                    <Label htmlFor="confirm-password">Confirm Password</Label>
+                    <div className="relative">
+                      <Input
+                        id="confirm-password"
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        placeholder="Re-enter your password"
+                        value={accountConfirmPassword}
+                        onChange={(e) => setAccountConfirmPassword(e.target.value)}
+                        className="w-full pr-10"
+                      />
+                      <button
+                        type="button"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      >
+                        {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                    {accountConfirmPassword && (
+                      <p className={`text-xs ${passwordsMatch ? 'text-green-600' : 'text-red-600'}`}>
+                        {passwordsMatch ? '✓ Passwords match' : '✗ Passwords do not match'}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Terms acceptance */}
+                  <div className="flex items-start gap-3 p-4 border-2 border-gray-200 rounded-lg hover:border-teal-500 transition-colors">
+                    <Checkbox 
+                      id="terms-consent"
+                      checked={accountTermsAccepted}
+                      onCheckedChange={(checked) => setAccountTermsAccepted(checked === true)}
+                    />
+                    <label 
+                      htmlFor="terms-consent"
+                      className="text-sm text-gray-700 leading-relaxed cursor-pointer"
+                    >
+                      I agree to the{' '}
+                      <button 
+                        className="text-teal-600 hover:text-teal-700 underline"
+                        onClick={() => toast.info('Terms of Service would open here')}
+                      >
+                        Terms of Service
+                      </button>
+                      {' '}and{' '}
+                      <button 
+                        className="text-teal-600 hover:text-teal-700 underline"
+                        onClick={() => toast.info('Privacy Policy would open here')}
+                      >
+                        Privacy Policy
+                      </button>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="p-4 border-t">
+                <Button 
+                  className="w-full bg-teal-600 hover:bg-teal-700"
+                  disabled={!canSubmit}
+                  onClick={() => {
+                    toast.loading('Creating your account...');
+                    setTimeout(() => {
+                      toast.dismiss();
+                      toast.success('Account created successfully!');
+                      setTimeout(() => setCurrentScreen('home'), 500);
+                    }, 1500);
+                  }}
+                >
+                  Create Account
+                </Button>
+              </div>
+            </div>
+          </MobileFrame>
+        </div>
+      </>
+    );
+  }
+
+  // Registration Link Sent Screen
+  if (currentScreen === 'registration-link-sent') {
+    const contactMethod = matchedPatient?.telecom?.find(t => t.system === 'phone') ? 'SMS' : 'Email';
+    const contactDestination = matchedPatient?.telecom?.find(t => t.system === 'phone')?.value || 
+                               matchedPatient?.telecom?.find(t => t.system === 'email')?.value ||
+                               'your contact method';
+
+    return (
+      <>
+        <Toaster />
+        <div className="space-y-6">
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <h2>Patient App Demo</h2>
+            <p className="text-gray-600 mt-1">
+              Navigate through the patient experience
+            </p>
+          </motion.div>
+
+          <MobileFrame>
+            <div className="h-full flex flex-col bg-white">
+              {/* Header */}
+              <div className="bg-teal-600 text-white p-4 text-center">
+                <h3 className="text-base">Registration Complete</h3>
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 flex flex-col justify-center p-6">
+                <motion.div 
+                  className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.3, type: "spring", stiffness: 200 }}
+                >
+                  <CheckCircle2 className="w-8 h-8 text-green-600" />
+                </motion.div>
+                
+                <h3 className="text-center mb-2">Identity Verified!</h3>
+                <p className="text-sm text-gray-600 text-center mb-6">
+                  We've sent you a secure link to complete your registration
+                </p>
+
+                <div className="space-y-4">
+                  <div className="bg-blue-50 border-l-4 border-blue-500 rounded p-4">
+                    <div className="flex gap-2">
+                      <Mail className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                      <div className="text-sm">
+                        <strong className="text-blue-900">Check Your {contactMethod}</strong>
+                        <p className="text-blue-700 mt-1">
+                          We've sent a registration link to <strong>{contactDestination}</strong>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                    <div className="text-sm text-gray-700 font-medium">Next Steps:</div>
+                    <ol className="space-y-2 text-sm text-gray-600">
+                      <li className="flex gap-2">
+                        <span className="flex-shrink-0 w-5 h-5 bg-teal-600 text-white rounded-full flex items-center justify-center text-xs">1</span>
+                        <span>Click the link in your {contactMethod.toLowerCase()}</span>
+                      </li>
+                      <li className="flex gap-2">
+                        <span className="flex-shrink-0 w-5 h-5 bg-teal-600 text-white rounded-full flex items-center justify-center text-xs">2</span>
+                        <span>Create your username and password</span>
+                      </li>
+                      <li className="flex gap-2">
+                        <span className="flex-shrink-0 w-5 h-5 bg-teal-600 text-white rounded-full flex items-center justify-center text-xs">3</span>
+                        <span>Start using your patient portal</span>
+                      </li>
+                    </ol>
+                  </div>
+
+                  <div className="border-t pt-4 space-y-3">
+                    <p className="text-xs text-gray-500 text-center">
+                      The link will expire in 24 hours for security
+                    </p>
+                    
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => setShowSmsPreview(true)}
+                      >
+                        <MessageSquare className="w-4 h-4 mr-2" />
+                        View {contactMethod}
+                      </Button>
+                      <Button 
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => {
+                          toast.success('Registration link resent!');
+                        }}
+                      >
+                        Resend Link
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="p-4 border-t">
+                <Button 
+                  className="w-full bg-teal-600 hover:bg-teal-700"
+                  onClick={() => setCurrentScreen('app-download')}
+                >
+                  Return to Home
+                </Button>
+              </div>
+            </div>
+
+            {/* SMS/Email Preview Modal */}
+            <AnimatePresence>
+              {showSmsPreview && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="absolute inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+                  onClick={() => setShowSmsPreview(false)}
+                >
+                  <motion.div
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.9, opacity: 0 }}
+                    className="bg-white rounded-lg max-w-sm w-full p-6 space-y-4"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-semibold">Demo {contactMethod} Message</h3>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowSmsPreview(false)}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+
+                    {contactMethod === 'SMS' ? (
+                      <div className="bg-gray-100 rounded-lg p-4 space-y-3">
+                        <div className="flex items-center gap-2 text-xs text-gray-500">
+                          <Smartphone className="w-4 h-4" />
+                          <span>To: {contactDestination}</span>
+                        </div>
+                        <div className="bg-white rounded-lg p-3 shadow-sm">
+                          <p className="text-sm text-gray-800 whitespace-pre-line">
+                            <strong>BASE Health</strong>
+                            {'\n\n'}
+                            Hi {patientData.firstName},
+                            {'\n\n'}
+                            Welcome to BASE Health! Your identity has been verified.
+                            {'\n\n'}
+                            Complete your registration here:
+                            {'\n'}
+                            https://base.health/register/a8f3k9x2
+                            {'\n\n'}
+                            This link expires in 24 hours.
+                            {'\n\n'}
+                            - Madison Medical Center P.A.
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="bg-gray-100 rounded-lg p-4 space-y-3">
+                        <div className="flex items-center gap-2 text-xs text-gray-500">
+                          <Mail className="w-4 h-4" />
+                          <span>To: {contactDestination}</span>
+                        </div>
+                        <div className="bg-white rounded-lg p-4 shadow-sm space-y-3">
+                          <div className="text-sm">
+                            <strong>Subject:</strong> Complete Your BASE Health Registration
+                          </div>
+                          <div className="border-t pt-3 text-sm text-gray-800 space-y-2">
+                            <p>Hi {patientData.firstName},</p>
+                            <p>Welcome to BASE Health! Your identity has been verified at Madison Medical Center P.A.</p>
+                            <p>Click the button below to complete your registration and create your secure account:</p>
+                            <div className="bg-teal-600 text-white text-center py-2 px-4 rounded my-3">
+                              Complete Registration
+                            </div>
+                            <p className="text-xs text-gray-600">Or copy this link: https://base.health/register/a8f3k9x2</p>
+                            <p className="text-xs text-gray-500 mt-4">This link expires in 24 hours for your security.</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    <Button 
+                      className="w-full"
+                      onClick={() => setShowSmsPreview(false)}
+                    >
+                      Close
+                    </Button>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </MobileFrame>
+        </div>
       </>
     );
   }
@@ -3201,23 +4152,91 @@ export function PatientAppDemo({ initialScreen = 'app-download' }: PatientAppDem
 
   // PIN Code Entry Screen
   if (currentScreen === 'pin-code') {
+    const phoneNumber = matchedPatient?.telecom?.find(t => t.system === 'phone')?.value || '+1 (555) 123-4567';
+    
     const handlePinCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       setPinCode(e.target.value);
     };
 
-    const handleContinueWithPin = () => {
-      if (pinCode.trim().length > 0) {
-        toast.success('PIN Code verified successfully!');
-        setTimeout(() => setCurrentScreen('mfa-setup'), 500);
+    const handleContinueWithPin = async () => {
+      if (pinCode.trim().length === 0) return;
+      
+      try {
+        toast.loading('Verifying code...');
+        
+        const verifyResponse = await greenwayOtpApi.verifyOtp({
+          phone: phoneNumber,
+          requestId: otpRequestId,
+          code: pinCode,
+          correlationId: crypto.randomUUID()
+        });
+
+        toast.dismiss();
+        
+        if (verifyResponse.verified) {
+          toast.success('Phone verified successfully!');
+          console.log('[OTP] Proof token:', verifyResponse.proofToken);
+          setTimeout(() => setCurrentScreen('create-account'), 500);
+        } else {
+          setOtpRemainingAttempts(verifyResponse.remainingAttempts || 0);
+          toast.error(`Incorrect code. ${verifyResponse.remainingAttempts} attempts remaining.`);
+          setPinCode('');
+        }
+      } catch (error: any) {
+        toast.dismiss();
+        
+        if (error.status === 423) {
+          // Account locked
+          setOtpLockoutExpires(error.lockoutExpires);
+          const lockoutTime = new Date(error.lockoutExpires);
+          toast.error(`Too many failed attempts. Account locked until ${lockoutTime.toLocaleTimeString()}`);
+          setPinCode('');
+        } else if (error.status === 410) {
+          // OTP expired
+          toast.error('Verification code expired. Please request a new one.');
+        } else {
+          toast.error(error.error || 'Verification failed');
+        }
       }
     };
 
-    const handleResendEmail = () => {
-      // Show toast notification
-      toast.success('PIN Code email has been resent');
+    const handleResendCode = async () => {
+      try {
+        toast.loading('Sending new verification code...');
+        
+        const otpResponse = await greenwayOtpApi.requestOtp({
+          phone: phoneNumber,
+          userId: matchedPatient?.id,
+          purpose: 'registration',
+          channel: 'sms',
+          correlationId: crypto.randomUUID()
+        });
+
+        setOtpRequestId(otpResponse.requestId);
+        setOtpRemainingAttempts(5);
+        setPinCode('');
+        
+        toast.dismiss();
+        toast.success('New verification code sent!');
+        
+        // Log the OTP code for demo purposes
+        const demoCode = greenwayOtpApi.getOtpCode(otpResponse.requestId);
+        console.log(`[DEMO] New OTP Code: ${demoCode}`);
+        toast.info(`Demo OTP: ${demoCode}`, { duration: 10000 });
+      } catch (error: any) {
+        toast.dismiss();
+        if (error.status === 429) {
+          toast.error(`Rate limited. Please wait ${error.retryAfter} seconds.`);
+        } else if (error.status === 403) {
+          toast.error('SMS consent required. Please go back and accept consent.');
+          setTimeout(() => setCurrentScreen('tcpa-consent'), 2000);
+        } else {
+          toast.error(error.error || 'Failed to send code');
+        }
+      }
     };
 
-    const isPinValid = pinCode.trim().length > 0;
+    const isPinValid = pinCode.trim().length === 6;
 
     return (
       <>
@@ -3242,11 +4261,11 @@ export function PatientAppDemo({ initialScreen = 'app-download' }: PatientAppDem
                 variant="ghost" 
                 size="sm" 
                 className="text-white hover:bg-teal-700 -ml-2"
-                onClick={() => setCurrentScreen('email-verification')}
+                onClick={() => setCurrentScreen('tcpa-consent')}
               >
                 <ChevronLeft className="w-5 h-5" />
               </Button>
-              <h3 className="text-base">Verify Account</h3>
+              <h3 className="text-base">Verify Phone</h3>
               <div className="w-8"></div>
             </div>
 
@@ -3256,12 +4275,37 @@ export function PatientAppDemo({ initialScreen = 'app-download' }: PatientAppDem
                 {/* Title and Description */}
                 <div className="flex flex-col gap-2">
                   <h2 className="text-[#333333] text-[28px]" style={{ fontWeight: 500 }}>
-                    Verify Account
+                    Enter Verification Code
                   </h2>
                   <p className="text-[#333333] text-sm">
-                    Confirm your email address by entering the PIN Code that was sent to you.
+                    We sent a 6-digit code to {phoneNumber}. Enter it below to verify your phone number.
                   </p>
                 </div>
+
+                {/* Remaining attempts warning */}
+                {otpRemainingAttempts < 5 && otpRemainingAttempts > 0 && (
+                  <div className="bg-amber-50 border-l-4 border-amber-500 rounded p-3">
+                    <div className="flex gap-2">
+                      <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                      <p className="text-sm text-amber-800">
+                        {otpRemainingAttempts} {otpRemainingAttempts === 1 ? 'attempt' : 'attempts'} remaining
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Lockout warning */}
+                {otpLockoutExpires && (
+                  <div className="bg-red-50 border-l-4 border-red-500 rounded p-3">
+                    <div className="flex gap-2">
+                      <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
+                      <div className="text-sm text-red-800">
+                        <strong>Account Locked</strong>
+                        <p className="mt-1">Too many failed attempts. Please try again after {new Date(otpLockoutExpires).toLocaleTimeString()}.</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* PIN Code Input */}
                 <div className="bg-[rgba(255,255,255,0.7)] rounded-[20px] border border-white shadow-[0px_0px_6px_0px_rgba(0,0,0,0.15)] p-4">
@@ -3270,26 +4314,30 @@ export function PatientAppDemo({ initialScreen = 'app-download' }: PatientAppDem
                     <div className="flex flex-col gap-[27px]">
                       <div>
                         <label className="text-[#333333] text-sm mb-[5px] block" style={{ fontWeight: 500 }}>
-                          <span>Enter PIN Code </span>
+                          <span>Enter 6-Digit Code </span>
                           <span className="text-[#b50000]">*</span>
                         </label>
                         <div className="relative">
                           <Input
                             type="text"
-                            placeholder="PIN Code"
+                            placeholder="000000"
                             value={pinCode}
                             onChange={handlePinCodeChange}
-                            className="w-full h-[40px] rounded-[20px] border-[#e4e4e4] bg-white px-5 text-sm placeholder:text-[#877f7f]"
+                            maxLength={6}
+                            disabled={!!otpLockoutExpires}
+                            className="w-full h-[40px] rounded-[20px] border-[#e4e4e4] bg-white px-5 text-sm placeholder:text-[#877f7f] text-center tracking-widest"
+                            style={{ fontSize: '18px', letterSpacing: '0.5em' }}
                           />
                         </div>
                       </div>
 
-                      {/* Resend Email Link */}
+                      {/* Resend SMS Link */}
                       <button
-                        onClick={handleResendEmail}
-                        className="text-[#007cbe] text-sm underline text-left"
+                        onClick={handleResendCode}
+                        disabled={!!otpLockoutExpires}
+                        className="text-[#007cbe] text-sm underline text-left disabled:text-gray-400 disabled:no-underline"
                       >
-                        Resend Email
+                        Resend Code via SMS
                       </button>
                     </div>
 
@@ -3297,12 +4345,12 @@ export function PatientAppDemo({ initialScreen = 'app-download' }: PatientAppDem
                     <div className="flex flex-col gap-4">
                       <Button
                         className={`w-full h-[40px] rounded-[20px] ${
-                          isPinValid 
+                          isPinValid && !otpLockoutExpires
                             ? 'bg-teal-600 hover:bg-teal-700 text-white' 
                             : 'bg-[#e8e6e6] text-[#877f7f] cursor-not-allowed'
                         }`}
                         onClick={handleContinueWithPin}
-                        disabled={!isPinValid}
+                        disabled={!isPinValid || !!otpLockoutExpires}
                       >
                         Continue
                       </Button>
@@ -3310,7 +4358,7 @@ export function PatientAppDemo({ initialScreen = 'app-download' }: PatientAppDem
                       <Button
                         variant="outline"
                         className="w-full h-[40px] rounded-[20px] border-2 border-[#007cbe] bg-white text-[#007cbe] hover:bg-gray-50"
-                        onClick={() => setCurrentScreen('email-verification')}
+                        onClick={() => setCurrentScreen('tcpa-consent')}
                       >
                         Back
                       </Button>
@@ -4603,6 +5651,36 @@ export function PatientAppDemo({ initialScreen = 'app-download' }: PatientAppDem
               </motion.div>
             </motion.div>
 
+            {/* Health Summary Card */}
+            <motion.div 
+              className="px-4 pb-4"
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.45 }}
+            >
+              <motion.div
+                whileHover={{ scale: 1.02, y: -2 }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                <Card 
+                  className="cursor-pointer hover:shadow-lg transition-all duration-200 border border-gray-200"
+                  onClick={() => setCurrentScreen('health-summary')}
+                >
+                  <CardContent className="p-5 flex items-center gap-4">
+                    <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-md">
+                      <FileText className="w-7 h-7 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium text-gray-900 mb-0.5">Health Summary</p>
+                      <p className="text-sm text-gray-600">View your medical information, insurance, and allergies</p>
+                    </div>
+                    <ChevronLeft className="w-5 h-5 text-gray-400 rotate-180" />
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </motion.div>
+
             {/* Recent Activity - Enhanced */}
             <ScrollArea className="flex-1 px-4">
               <motion.div 
@@ -4624,11 +5702,60 @@ export function PatientAppDemo({ initialScreen = 'app-download' }: PatientAppDem
                 </div>
                 
                 <div className="space-y-3">
-                  {/* Annual Wellness Exam Reminder */}
+                  {/* Pre-Visit Forms To-Do */}
                   <motion.div
                     initial={{ x: -20, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
                     transition={{ delay: 0.55 }}
+                  >
+                    <Card 
+                      className="border-2 border-blue-200 bg-blue-50/50 shadow-sm cursor-pointer hover:shadow-md transition-all"
+                      onClick={() => setCurrentScreen('todo-checklist')}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-start gap-3">
+                          <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm">
+                            <ClipboardList className="w-5 h-5 text-white" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm text-blue-900 mb-1 flex items-center gap-2">
+                              Pre-Visit Forms Required
+                              <Badge className="bg-orange-500 text-white text-[10px] px-1.5">2 Pending</Badge>
+                            </p>
+                            <p className="text-xs text-blue-700 leading-relaxed">
+                              Complete your intake forms before your appointment on Nov 30, 2025
+                            </p>
+                            <div className="mt-3">
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-xs text-blue-700">4 of 6 complete</span>
+                                <span className="text-xs text-blue-700">67%</span>
+                              </div>
+                              <div className="h-2 bg-blue-200 rounded-full overflow-hidden">
+                                <div className="h-full bg-blue-600 rounded-full" style={{ width: '67%' }}></div>
+                              </div>
+                            </div>
+                            <Button 
+                              size="sm" 
+                              className="bg-blue-600 hover:bg-blue-700 text-white h-8 text-xs mt-3 w-full"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setCurrentScreen('todo-checklist');
+                              }}
+                            >
+                              <ClipboardList className="w-3 h-3 mr-1" />
+                              Complete Forms
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+
+                  {/* Annual Wellness Exam Reminder */}
+                  <motion.div
+                    initial={{ x: -20, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: 0.6 }}
                   >
                     <Card className="border-2 border-teal-200 bg-teal-50/50 shadow-sm">
                       <CardContent className="p-4">
@@ -5078,6 +6205,40 @@ export function PatientAppDemo({ initialScreen = 'app-download' }: PatientAppDem
                         <div className={`text-sm leading-relaxed ${message.imageUrl || message.fileUrl ? 'px-2 pb-1' : ''}`}>{message.content}</div>
                       </div>
                       
+                      {/* Send Confirmation Options (Yes/No) */}
+                      {message.isRouted && waitingForSendConfirmation && index === chatMessages.length - 1 && (
+                        <motion.div 
+                          className="flex gap-2 mt-2"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.3 }}
+                        >
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleSendConfirmation(true)}
+                            className="bg-teal-600 hover:bg-teal-700 text-white border-teal-600 hover:border-teal-700"
+                          >
+                            Yes
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleSendConfirmation(false)}
+                            className="bg-white hover:bg-gray-50 border-gray-300 text-gray-700 hover:border-gray-400"
+                          >
+                            No
+                          </Button>
+                        </motion.div>
+                      )}
+                      
+                      {/* Debug info */}
+                      {index === chatMessages.length - 1 && (
+                        <div className="text-xs text-gray-400 mt-1">
+                          Debug: isRouted={String(message.isRouted)} | waiting={String(waitingForSendConfirmation)} | index={index} | length={chatMessages.length}
+                        </div>
+                      )}
+                      
                       {/* Notification Preference Options */}
                       {message.isRouted && waitingForNotificationPreference && index === chatMessages.length - 1 && (
                         <motion.div 
@@ -5525,6 +6686,509 @@ export function PatientAppDemo({ initialScreen = 'app-download' }: PatientAppDem
         </Card>
       </div>
       </>
+    );
+  }
+
+  // To-Do Checklist Screen
+  if (currentScreen === 'todo-checklist') {
+    return (
+      <>
+        <Toaster />
+        <div className="space-y-6">
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-center flex-1">
+                <h2>Pre-Visit To-Do List</h2>
+                <p className="text-gray-600 mt-1">
+                  Complete these tasks before your appointment
+                </p>
+              </div>
+              <ViewModeToggle viewMode={viewMode} onViewModeChange={setViewMode} />
+            </div>
+          </motion.div>
+
+          <MobileFrame viewMode={viewMode}>
+            <div className="h-full flex flex-col bg-gray-50">
+              {/* Header */}
+              <div className="bg-gradient-to-br from-blue-600 to-blue-700 text-white px-6 py-5 shadow-md">
+                <div className="flex items-center gap-4 mb-4">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="text-white hover:bg-white/20 rounded-full w-10 h-10 p-0"
+                    onClick={() => setCurrentScreen('home')}
+                  >
+                    <ArrowLeft className="w-5 h-5" />
+                  </Button>
+                  <h3 className="text-white flex-1">Pre-Visit Checklist</h3>
+                </div>
+                
+                {/* Appointment Info */}
+                <div className="bg-white/20 rounded-lg p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Calendar className="w-4 h-4" />
+                    <span className="text-sm">Upcoming Appointment</span>
+                  </div>
+                  <div className="text-white/90 text-sm">
+                    <div>November 30, 2025 at 2:00 PM</div>
+                    <div>Dr. Sarah Chen - Annual Physical</div>
+                    <div className="text-xs mt-1 text-white/75">Main Campus, Room 204</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Progress Section */}
+              <div className="p-4 bg-white border-b">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm">Overall Progress</span>
+                  <span className="text-sm text-blue-600">{insuranceCardFiles.length > 0 && photoIdFile ? '6' : '4'} of 6 complete</span>
+                </div>
+                <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+                  <div className="h-full bg-blue-600 rounded-full transition-all duration-500" style={{ width: insuranceCardFiles.length > 0 && photoIdFile ? '100%' : '67%' }}></div>
+                </div>
+                <p className="text-xs text-gray-600 mt-2">Complete all tasks to help us prepare for your visit</p>
+              </div>
+
+              {/* Tasks List */}
+              <div className="flex-1 overflow-y-auto">
+                <div className="p-4 space-y-3 pb-24">
+                  {/* Completed Tasks */}
+                  <Card className="border-2 border-green-200 bg-green-50/50">
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                          <CheckCircle2 className="w-5 h-5 text-white" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between mb-1">
+                            <h4 className="font-medium text-sm">New Patient Intake Form</h4>
+                            <Badge className="bg-green-600 text-white text-xs">Complete</Badge>
+                          </div>
+                          <p className="text-xs text-gray-600 mb-2">Medical history, current medications, allergies</p>
+                          <div className="text-xs text-green-700">Completed on Nov 20, 2025</div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="border-2 border-green-200 bg-green-50/50">
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                          <CheckCircle2 className="w-5 h-5 text-white" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between mb-1">
+                            <h4 className="font-medium text-sm">Financial Consent</h4>
+                            <Badge className="bg-green-600 text-white text-xs">Complete</Badge>
+                          </div>
+                          <p className="text-xs text-gray-600 mb-2">Financial responsibility agreement</p>
+                          <div className="text-xs text-green-700">Completed on Nov 20, 2025</div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="border-2 border-green-200 bg-green-50/50">
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                          <CheckCircle2 className="w-5 h-5 text-white" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between mb-1">
+                            <h4 className="font-medium text-sm">HIPAA Privacy Notice</h4>
+                            <Badge className="bg-green-600 text-white text-xs">Complete</Badge>
+                          </div>
+                          <p className="text-xs text-gray-600 mb-2">Privacy practices acknowledgment</p>
+                          <div className="text-xs text-green-700">Completed on Nov 20, 2025</div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="border-2 border-green-200 bg-green-50/50">
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                          <CheckCircle2 className="w-5 h-5 text-white" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between mb-1">
+                            <h4 className="font-medium text-sm">COVID-19 Screening</h4>
+                            <Badge className="bg-green-600 text-white text-xs">Complete</Badge>
+                          </div>
+                          <p className="text-xs text-gray-600 mb-2">Pre-visit health screening</p>
+                          <div className="text-xs text-green-700">Completed on Nov 23, 2025</div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Pending Tasks */}
+                  <Card className={`border-2 shadow-sm ${insuranceCardFiles.length > 0 ? 'border-green-200 bg-green-50/50' : 'border-orange-200 bg-orange-50/50'}`}>
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-3">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${insuranceCardFiles.length > 0 ? 'bg-green-500' : 'bg-orange-500'}`}>
+                          {insuranceCardFiles.length > 0 ? (
+                            <CheckCircle2 className="w-5 h-5 text-white" />
+                          ) : (
+                            <CreditCard className="w-5 h-5 text-white" />
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between mb-1">
+                            <h4 className="font-medium text-sm">Upload Insurance Card</h4>
+                            <Badge className={`text-white text-xs ${insuranceCardFiles.length > 0 ? 'bg-green-600' : 'bg-orange-500'}`}>
+                              {insuranceCardFiles.length > 0 ? 'Complete' : 'Pending'}
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-gray-600 mb-2">Front and back of your insurance card</p>
+                          {insuranceCardFiles.length > 0 ? (
+                            <>
+                              <div className="text-xs text-green-700 mb-2">Completed on {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
+                            </>
+                          ) : (
+                            <>
+                              <input
+                                ref={insuranceCardInputRef}
+                                type="file"
+                                accept="image/*"
+                                multiple
+                                className="hidden"
+                                onChange={(e) => {
+                                  const files = Array.from(e.target.files || []);
+                                  if (files.length > 0) {
+                                    setInsuranceCardFiles(files);
+                                    toast.success(`${files.length} image${files.length > 1 ? 's' : ''} uploaded successfully!`);
+                                    setTimeout(() => {
+                                      toast.info('Form completion notification sent to staff');
+                                    }, 1000);
+                                  }
+                                }}
+                              />
+                              <Button 
+                                size="sm" 
+                                className="bg-orange-600 hover:bg-orange-700 text-white h-8 text-xs w-full"
+                                onClick={() => insuranceCardInputRef.current?.click()}
+                              >
+                                <Camera className="w-3 h-3 mr-1" />
+                                Upload Photos
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className={`border-2 shadow-sm ${photoIdFile ? 'border-green-200 bg-green-50/50' : 'border-orange-200 bg-orange-50/50'}`}>
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-3">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${photoIdFile ? 'bg-green-500' : 'bg-orange-500'}`}>
+                          {photoIdFile ? (
+                            <CheckCircle2 className="w-5 h-5 text-white" />
+                          ) : (
+                            <IdCard className="w-5 h-5 text-white" />
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between mb-1">
+                            <h4 className="font-medium text-sm">Upload Photo ID</h4>
+                            <Badge className={`text-white text-xs ${photoIdFile ? 'bg-green-600' : 'bg-orange-500'}`}>
+                              {photoIdFile ? 'Complete' : 'Pending'}
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-gray-600 mb-2">Driver's license or government-issued ID</p>
+                          {photoIdFile ? (
+                            <div className="text-xs text-green-700">Completed on {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
+                          ) : (
+                            <>
+                              <input
+                                ref={photoIdInputRef}
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) {
+                                    setPhotoIdFile(file);
+                                    toast.success('Photo ID uploaded successfully!');
+                                    setTimeout(() => {
+                                      toast.success('All forms complete! Staff has been notified.');
+                                    }, 1000);
+                                  }
+                                }}
+                              />
+                              <Button 
+                                size="sm" 
+                                className="bg-orange-600 hover:bg-orange-700 text-white h-8 text-xs w-full"
+                                onClick={() => photoIdInputRef.current?.click()}
+                              >
+                                <Camera className="w-3 h-3 mr-1" />
+                                Upload Photo
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+
+              {/* Footer Info */}
+              {insuranceCardFiles.length > 0 && photoIdFile ? (
+                <div className="p-4 bg-green-50 border-t">
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-xs text-green-800 font-medium">
+                        All tasks completed!
+                      </p>
+                      <p className="text-xs text-green-700 mt-1">
+                        You're all set for your appointment on November 30, 2025. We'll see you soon!
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-4 bg-blue-50 border-t">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                    <p className="text-xs text-blue-800">
+                      Please complete all tasks at least 24 hours before your appointment. This helps us provide you with the best care.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </MobileFrame>
+        </div>
+      </>
+    );
+  }
+
+  // Health Summary Screen
+  if (currentScreen === 'health-summary') {
+    return (
+      <div className="space-y-6">
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-center flex-1">
+              <h2>Health Summary</h2>
+              <p className="text-gray-600 mt-1">
+                Your medical information from FHIR records
+              </p>
+            </div>
+            <ViewModeToggle viewMode={viewMode} onViewModeChange={setViewMode} />
+          </div>
+        </motion.div>
+
+        <MobileFrame viewMode={viewMode}>
+          <div className="h-full flex flex-col bg-white">
+            {/* Header */}
+            <div className="bg-gradient-to-br from-purple-600 to-purple-700 text-white px-6 py-4 flex items-center gap-4 shadow-md">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-white hover:bg-white/20 rounded-full w-10 h-10 p-0"
+                onClick={() => setCurrentScreen('home')}
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+              <h3 className="text-white flex-1">Health Summary</h3>
+            </div>
+
+            {/* Health Summary Content */}
+            <HealthSummary 
+              patientId="patient-123" 
+              useLiveData={false} 
+              onNavigate={(screen) => setCurrentScreen(screen as DemoScreen)}
+            />
+          </div>
+        </MobileFrame>
+      </div>
+    );
+  }
+
+  // Lab Results Screen
+  if (currentScreen === 'lab-results') {
+    return (
+      <div className="space-y-6">
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-center flex-1">
+              <h2>Lab Results</h2>
+              <p className="text-gray-600 mt-1">
+                Your laboratory test results
+              </p>
+            </div>
+            <ViewModeToggle viewMode={viewMode} onViewModeChange={setViewMode} />
+          </div>
+        </motion.div>
+
+        <MobileFrame viewMode={viewMode}>
+          <div className="h-full flex flex-col bg-white">
+            {/* Header */}
+            <div className="bg-gradient-to-br from-purple-600 to-purple-700 text-white px-6 py-4 flex items-center gap-4 shadow-md">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-white hover:bg-white/20 rounded-full w-10 h-10 p-0"
+                onClick={() => setCurrentScreen('health-summary')}
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+              <h3 className="text-white flex-1">Lab Results</h3>
+            </div>
+
+            {/* Lab Results Content */}
+            <LabResults patientId="patient-123" useLiveData={false} />
+          </div>
+        </MobileFrame>
+      </div>
+    );
+  }
+
+  // Medical History Screen
+  if (currentScreen === 'medical-history') {
+    return (
+      <div className="space-y-6">
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-center flex-1">
+              <h2>Medical History</h2>
+              <p className="text-gray-600 mt-1">
+                Your conditions, medications, and procedures
+              </p>
+            </div>
+            <ViewModeToggle viewMode={viewMode} onViewModeChange={setViewMode} />
+          </div>
+        </motion.div>
+
+        <MobileFrame viewMode={viewMode}>
+          <div className="h-full flex flex-col bg-white">
+            {/* Header */}
+            <div className="bg-gradient-to-br from-purple-600 to-purple-700 text-white px-6 py-4 flex items-center gap-4 shadow-md">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-white hover:bg-white/20 rounded-full w-10 h-10 p-0"
+                onClick={() => setCurrentScreen('health-summary')}
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+              <h3 className="text-white flex-1">Medical History</h3>
+            </div>
+
+            {/* Medical History Content */}
+            <MedicalHistory patientId="patient-123" useLiveData={false} />
+          </div>
+        </MobileFrame>
+      </div>
+    );
+  }
+
+  // Appointment History Screen
+  if (currentScreen === 'appointment-history') {
+    return (
+      <div className="space-y-6">
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-center flex-1">
+              <h2>Appointment History</h2>
+              <p className="text-gray-600 mt-1">
+                Your past and upcoming visits
+              </p>
+            </div>
+            <ViewModeToggle viewMode={viewMode} onViewModeChange={setViewMode} />
+          </div>
+        </motion.div>
+
+        <MobileFrame viewMode={viewMode}>
+          <div className="h-full flex flex-col bg-white">
+            {/* Header */}
+            <div className="bg-gradient-to-br from-purple-600 to-purple-700 text-white px-6 py-4 flex items-center gap-4 shadow-md">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-white hover:bg-white/20 rounded-full w-10 h-10 p-0"
+                onClick={() => setCurrentScreen('health-summary')}
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+              <h3 className="text-white flex-1">Appointments</h3>
+            </div>
+
+            {/* Appointment History Content */}
+            <AppointmentHistory patientId="patient-123" useLiveData={false} />
+          </div>
+        </MobileFrame>
+      </div>
+    );
+  }
+
+  // Visit Detail Screen
+  if (currentScreen === 'visit-detail') {
+    return (
+      <div className="space-y-6">
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-center flex-1">
+              <h2>Visit Summary</h2>
+              <p className="text-gray-600 mt-1">
+                Detailed visit information
+              </p>
+            </div>
+            <ViewModeToggle viewMode={viewMode} onViewModeChange={setViewMode} />
+          </div>
+        </motion.div>
+
+        <MobileFrame viewMode={viewMode}>
+          <div className="h-full flex flex-col bg-white">
+            {/* Header */}
+            <div className="bg-gradient-to-br from-purple-600 to-purple-700 text-white px-6 py-4 flex items-center gap-4 shadow-md">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-white hover:bg-white/20 rounded-full w-10 h-10 p-0"
+                onClick={() => setCurrentScreen('health-summary')}
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+              <h3 className="text-white flex-1">Visit Summary</h3>
+            </div>
+
+            {/* Visit Detail Content */}
+            <VisitDetail encounterId="encounter-123" patientId="patient-123" useLiveData={false} />
+          </div>
+        </MobileFrame>
+      </div>
     );
   }
 

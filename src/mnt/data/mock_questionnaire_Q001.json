@@ -1,0 +1,335 @@
+{
+  "resourceType": "Questionnaire",
+  "id": "Q-001",
+  "url": "https://greenwayhealth.com/fhir/Questionnaire/new-patient-intake",
+  "version": "2.1",
+  "name": "NewPatientIntake",
+  "title": "New Patient Intake Form",
+  "status": "active",
+  "date": "2025-11-15",
+  "publisher": "Greenway Health",
+  "description": "Comprehensive intake form for new patients including demographics, medical history, and insurance information",
+  "purpose": "Collect essential patient information for first visit",
+  "effectivePeriod": {
+    "start": "2025-11-15"
+  },
+  "item": [
+    {
+      "linkId": "section-demographics",
+      "text": "Personal Information",
+      "type": "group",
+      "required": true,
+      "item": [
+        {
+          "linkId": "1.1",
+          "text": "First Name",
+          "type": "string",
+          "required": true
+        },
+        {
+          "linkId": "1.2",
+          "text": "Middle Name",
+          "type": "string",
+          "required": false
+        },
+        {
+          "linkId": "1.3",
+          "text": "Last Name",
+          "type": "string",
+          "required": true
+        },
+        {
+          "linkId": "1.4",
+          "text": "Date of Birth",
+          "type": "date",
+          "required": true
+        },
+        {
+          "linkId": "1.5",
+          "text": "Sex Assigned at Birth",
+          "type": "choice",
+          "required": true,
+          "answerOption": [
+            { "valueCoding": { "code": "male", "display": "Male" } },
+            { "valueCoding": { "code": "female", "display": "Female" } },
+            { "valueCoding": { "code": "other", "display": "Other" } }
+          ]
+        },
+        {
+          "linkId": "1.6",
+          "text": "Gender Identity",
+          "type": "choice",
+          "required": false,
+          "answerOption": [
+            { "valueCoding": { "code": "male", "display": "Male" } },
+            { "valueCoding": { "code": "female", "display": "Female" } },
+            { "valueCoding": { "code": "non-binary", "display": "Non-binary" } },
+            { "valueCoding": { "code": "prefer-not-to-say", "display": "Prefer not to say" } }
+          ]
+        },
+        {
+          "linkId": "1.7",
+          "text": "Social Security Number (Last 4 digits)",
+          "type": "string",
+          "required": true,
+          "maxLength": 4
+        },
+        {
+          "linkId": "1.8",
+          "text": "Marital Status",
+          "type": "choice",
+          "required": false,
+          "answerOption": [
+            { "valueCoding": { "code": "single", "display": "Single" } },
+            { "valueCoding": { "code": "married", "display": "Married" } },
+            { "valueCoding": { "code": "divorced", "display": "Divorced" } },
+            { "valueCoding": { "code": "widowed", "display": "Widowed" } }
+          ]
+        }
+      ]
+    },
+    {
+      "linkId": "section-contact",
+      "text": "Contact Information",
+      "type": "group",
+      "required": true,
+      "item": [
+        {
+          "linkId": "2.1",
+          "text": "Street Address",
+          "type": "string",
+          "required": true
+        },
+        {
+          "linkId": "2.2",
+          "text": "Apartment/Unit Number",
+          "type": "string",
+          "required": false
+        },
+        {
+          "linkId": "2.3",
+          "text": "City",
+          "type": "string",
+          "required": true
+        },
+        {
+          "linkId": "2.4",
+          "text": "State",
+          "type": "string",
+          "required": true
+        },
+        {
+          "linkId": "2.5",
+          "text": "ZIP Code",
+          "type": "string",
+          "required": true
+        },
+        {
+          "linkId": "2.6",
+          "text": "Phone Number",
+          "type": "string",
+          "required": true
+        },
+        {
+          "linkId": "2.7",
+          "text": "Email Address",
+          "type": "string",
+          "required": true
+        },
+        {
+          "linkId": "2.8",
+          "text": "Preferred Contact Method",
+          "type": "choice",
+          "required": true,
+          "answerOption": [
+            { "valueCoding": { "code": "phone", "display": "Phone" } },
+            { "valueCoding": { "code": "email", "display": "Email" } },
+            { "valueCoding": { "code": "text", "display": "Text Message" } }
+          ]
+        }
+      ]
+    },
+    {
+      "linkId": "section-insurance",
+      "text": "Insurance Information",
+      "type": "group",
+      "required": true,
+      "item": [
+        {
+          "linkId": "3.1",
+          "text": "Do you have insurance?",
+          "type": "boolean",
+          "required": true
+        },
+        {
+          "linkId": "3.2",
+          "text": "Insurance Company Name",
+          "type": "string",
+          "required": true,
+          "enableWhen": [
+            {
+              "question": "3.1",
+              "operator": "=",
+              "answerBoolean": true
+            }
+          ]
+        },
+        {
+          "linkId": "3.3",
+          "text": "Member ID",
+          "type": "string",
+          "required": true,
+          "enableWhen": [
+            {
+              "question": "3.1",
+              "operator": "=",
+              "answerBoolean": true
+            }
+          ]
+        },
+        {
+          "linkId": "3.4",
+          "text": "Group Number",
+          "type": "string",
+          "required": false,
+          "enableWhen": [
+            {
+              "question": "3.1",
+              "operator": "=",
+              "answerBoolean": true
+            }
+          ]
+        },
+        {
+          "linkId": "3.5",
+          "text": "Subscriber Name (if not you)",
+          "type": "string",
+          "required": false,
+          "enableWhen": [
+            {
+              "question": "3.1",
+              "operator": "=",
+              "answerBoolean": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "linkId": "section-emergency",
+      "text": "Emergency Contact",
+      "type": "group",
+      "required": true,
+      "item": [
+        {
+          "linkId": "4.1",
+          "text": "Contact Name",
+          "type": "string",
+          "required": true
+        },
+        {
+          "linkId": "4.2",
+          "text": "Relationship",
+          "type": "string",
+          "required": true
+        },
+        {
+          "linkId": "4.3",
+          "text": "Phone Number",
+          "type": "string",
+          "required": true
+        }
+      ]
+    },
+    {
+      "linkId": "section-medical-history",
+      "text": "Medical History",
+      "type": "group",
+      "required": true,
+      "item": [
+        {
+          "linkId": "5.1",
+          "text": "Do you have any chronic conditions?",
+          "type": "choice",
+          "required": true,
+          "repeats": true,
+          "answerOption": [
+            { "valueCoding": { "code": "diabetes", "display": "Diabetes" } },
+            { "valueCoding": { "code": "hypertension", "display": "High Blood Pressure" } },
+            { "valueCoding": { "code": "asthma", "display": "Asthma" } },
+            { "valueCoding": { "code": "heart-disease", "display": "Heart Disease" } },
+            { "valueCoding": { "code": "cancer", "display": "Cancer" } },
+            { "valueCoding": { "code": "none", "display": "None" } }
+          ]
+        },
+        {
+          "linkId": "5.2",
+          "text": "List current medications (name and dosage)",
+          "type": "text",
+          "required": false
+        },
+        {
+          "linkId": "5.3",
+          "text": "Do you have any allergies?",
+          "type": "choice",
+          "required": true,
+          "repeats": true,
+          "answerOption": [
+            { "valueCoding": { "code": "penicillin", "display": "Penicillin" } },
+            { "valueCoding": { "code": "sulfa", "display": "Sulfa drugs" } },
+            { "valueCoding": { "code": "latex", "display": "Latex" } },
+            { "valueCoding": { "code": "food", "display": "Food allergies" } },
+            { "valueCoding": { "code": "none", "display": "No known allergies" } }
+          ]
+        },
+        {
+          "linkId": "5.4",
+          "text": "If food allergies, please specify",
+          "type": "string",
+          "required": false,
+          "enableWhen": [
+            {
+              "question": "5.3",
+              "operator": "=",
+              "answerCoding": { "code": "food" }
+            }
+          ]
+        },
+        {
+          "linkId": "5.5",
+          "text": "Have you had any surgeries?",
+          "type": "text",
+          "required": false
+        },
+        {
+          "linkId": "5.6",
+          "text": "Family medical history (parents, siblings)",
+          "type": "text",
+          "required": false
+        },
+        {
+          "linkId": "5.7",
+          "text": "Do you smoke?",
+          "type": "choice",
+          "required": true,
+          "answerOption": [
+            { "valueCoding": { "code": "never", "display": "Never" } },
+            { "valueCoding": { "code": "former", "display": "Former smoker" } },
+            { "valueCoding": { "code": "current", "display": "Current smoker" } }
+          ]
+        },
+        {
+          "linkId": "5.8",
+          "text": "Do you drink alcohol?",
+          "type": "choice",
+          "required": true,
+          "answerOption": [
+            { "valueCoding": { "code": "never", "display": "Never" } },
+            { "valueCoding": { "code": "occasionally", "display": "Occasionally" } },
+            { "valueCoding": { "code": "regularly", "display": "Regularly" } }
+          ]
+        }
+      ]
+    }
+  ]
+}

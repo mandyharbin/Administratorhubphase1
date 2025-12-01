@@ -1,0 +1,22 @@
+export default function handler(req: any, res: any) {
+  const data = {
+    "success": true,
+    "message": "Task T-1102 (Sign Financial Consent) marked as completed",
+    "taskId": "item-002",
+    "completedDate": "November 24, 2025",
+    "completedTime": "3:50 PM",
+    "patientId": "0efed85b-e8a2-417b-a1f4-6a30fd74e7c2",
+    "response": {
+      "taskId": "item-002",
+      "title": "Sign Financial Consent",
+      "status": "completed",
+      "completedDate": "November 24, 2025",
+      "completedBy": "John Smith",
+      "responseId": "resp-002",
+      "formId": "Q-002",
+      "formName": "Financial Consent"
+    }
+  };
+
+  res.status(200).json(data);
+}

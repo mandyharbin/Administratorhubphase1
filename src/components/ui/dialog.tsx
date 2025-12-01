@@ -3,6 +3,7 @@
 import * as React from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog@1.1.6";
 import { XIcon } from "lucide-react@0.487.0";
+import { VisuallyHidden } from "./visually-hidden";
 
 import { cn } from "./utils";
 
@@ -117,4 +118,5 @@ export {
   DialogPortal,
   DialogTitle,
   DialogTrigger,
+  VisuallyHidden,
 };

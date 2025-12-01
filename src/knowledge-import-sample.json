@@ -1,0 +1,58 @@
+[
+  {
+    "question": "What is your visitor policy?",
+    "answer": "Visitors are welcome during regular visiting hours: 8 AM - 8 PM daily. Please check in at the front desk. For patient safety, we limit visitors to 2 per patient.",
+    "category": "general",
+    "appliesTo": "all",
+    "tags": "visitor, policy, hours"
+  },
+  {
+    "question": "How do I request medical records?",
+    "answer": "Medical records can be requested through our patient portal or by calling (555) 123-4567. Allow 7-10 business days for processing.",
+    "category": "general",
+    "appliesTo": "all",
+    "tags": "medical records, records request"
+  },
+  {
+    "question": "Do you offer telehealth appointments?",
+    "answer": "Yes! We offer virtual visits via video call for routine consultations and follow-ups. Schedule through the patient portal or call us.",
+    "category": "scheduling",
+    "appliesTo": "all",
+    "tags": "telehealth, virtual visit, video"
+  },
+  {
+    "question": "What should I bring to my first appointment?",
+    "answer": "Please bring a valid ID, photo insurance card, list of current medications, and any relevant medical records from other providers.",
+    "category": "scheduling",
+    "appliesTo": "all",
+    "tags": "first visit, appointment, preparation"
+  },
+  {
+    "question": "How do I pay my bill?",
+    "answer": "You can pay online through the patient portal, by phone at (555) 123-4567, or by mail. We accept all major credit cards and payment plans are available.",
+    "category": "billing",
+    "appliesTo": "all",
+    "tags": "payment, billing, insurance"
+  },
+  {
+    "question": "What are your COVID-19 safety protocols?",
+    "answer": "We require masks in clinical areas, conduct health screenings at entry, and maintain enhanced cleaning protocols. Telehealth visits are available as an alternative.",
+    "category": "general",
+    "appliesTo": "all",
+    "tags": "COVID, safety, protocol"
+  },
+  {
+    "question": "Do you accept walk-ins?",
+    "answer": "Walk-ins are accepted at our urgent care locations only. Primary care appointments require scheduling in advance.",
+    "category": "scheduling",
+    "appliesTo": "practice-004",
+    "tags": "walk-in, urgent care, appointment"
+  },
+  {
+    "question": "How do I schedule a pediatric well-child visit?",
+    "answer": "Call us at (555) 666-7777 or use the patient portal to schedule. We recommend scheduling 2-4 weeks in advance.",
+    "category": "clinical",
+    "appliesTo": "practice-003",
+    "tags": "pediatric, well-child, preventive"
+  }
+]

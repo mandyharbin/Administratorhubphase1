@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import StaffResponseChannelPreview from './StaffResponseChannelPreview';
+import { InfoBanner } from './InfoBanner';
 
 export function AIAssistantReplies() {
   const routingScenarios = [
@@ -132,6 +133,11 @@ export function AIAssistantReplies() {
           <p className="text-gray-500">How the AI responds to different patient inquiries</p>
         </div>
       </div>
+
+      <InfoBanner 
+        title="What is this section used for?"
+        description="Configure how the AI Assistant responds to various patient inquiries, including routing logic for requests requiring staff attention (appointments, refills, billing), direct responses for informational queries, and notification preferences for staff routing."
+      />
 
       <Tabs defaultValue="routing" className="space-y-6">
         <TabsList>

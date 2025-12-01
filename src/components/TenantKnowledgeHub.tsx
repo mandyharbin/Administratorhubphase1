@@ -5,7 +5,7 @@ import { Label } from './ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { Badge } from './ui/badge';
 import { Plus, Upload, FileText, Pencil, Trash2, Settings, Download, Eye, Building2, Users, Sparkles, Info, GitBranch, History, Globe, Check, X, RefreshCw, AlertCircle } from 'lucide-react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Switch } from './ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
@@ -13,6 +13,7 @@ import { Textarea } from './ui/textarea';
 import { Checkbox } from './ui/checkbox';
 import { useState, useEffect } from 'react';
 import { projectId, publicAnonKey } from '../utils/supabase/info';
+import { InfoBanner } from './InfoBanner';
 
 interface Practice {
   id: string;
@@ -69,6 +70,26 @@ export function TenantKnowledgeHub() {
   const [versionHistoryOpen, setVersionHistoryOpen] = useState(false);
   const [testResponseOpen, setTestResponseOpen] = useState(false);
   const [currentSource, setCurrentSource] = useState<KnowledgeSource | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [importPreview, setImportPreview] = useState<any[]>([]);
+
+  // Article Import Form State
+  const [articleTitle, setArticleTitle] = useState('');
+  const [articleBody, setArticleBody] = useState('');
+  const [articleCategory, setArticleCategory] = useState('general');
+  const [articleAppliesTo, setArticleAppliesTo] = useState<'all' | 'specific'>('all');
+  const [articlePractices, setArticlePractices] = useState<string[]>([]);
+  const [articleTags, setArticleTags] = useState('');
+  const [articleAudience, setArticleAudience] = useState('');
+  const [articleCondition, setArticleCondition] = useState('');
+  const [articleLanguage, setArticleLanguage] = useState('en');
+  const [articleAuthor, setArticleAuthor] = useState('');
+  const [articleSource, setArticleSource] = useState('');
+  const [articleReviewDate, setArticleReviewDate] = useState('');
+  const [isDragging, setIsDragging] = useState(false);
+  const [uploadingFile, setUploadingFile] = useState(false);
 
   const [knowledgeSources, setKnowledgeSources] = useState<KnowledgeSource[]>([]);
   const [practices, setPractices] = useState<Practice[]>([
@@ -459,17 +480,29 @@ export function TenantKnowledgeHub() {
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to get AI response: ${response.statusText}`);
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Error testing AI:', errorData);
+        throw new Error(`Failed to get AI response: ${errorData.error || response.statusText}`);
       }
 
       const data = await response.json();
+      
+      // Check if we're in demo mode (fallback due to invalid API key)
+      if (data.isDemoMode) {
+        const demoWarning = { 
+          sender: 'system', 
+          content: '⚠️ Demo Mode Active: OpenAI API key is invalid. Showing sample responses. Please update your API key in Supabase secrets.' 
+        };
+        setTestMessages(prev => [...prev, demoWarning]);
+      }
+      
       const aiMessage = { sender: 'ai', content: data.response };
       setTestMessages(prev => [...prev, aiMessage]);
     } catch (error) {
       console.error('Error testing AI:', error);
       const errorMessage = { 
         sender: 'ai', 
-        content: 'Sorry, I encountered an error processing your message. Please try again.' 
+        content: 'Sorry, I encountered an error processing your message. The OpenAI API key may be invalid or expired. Please check the console for details.' 
       };
       setTestMessages(prev => [...prev, errorMessage]);
     } finally {
@@ -487,6 +520,265 @@ export function TenantKnowledgeHub() {
     setTestInput('');
   };
 
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    
+    setImportFile(file);
+    setImporting(true);
+    
+    try {
+      const text = await file.text();
+      let parsed: any[] = [];
+      
+      // Parse based on file type
+      if (file.name.endsWith('.json')) {
+        parsed = JSON.parse(text);
+      } else if (file.name.endsWith('.csv')) {
+        // Simple CSV parser
+        const lines = text.split('\n');
+        const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+        
+        for (let i = 1; i < lines.length; i++) {
+          if (!lines[i].trim()) continue;
+          const values = lines[i].split(',');
+          const row: any = {};
+          headers.forEach((header, index) => {
+            row[header] = values[index]?.trim() || '';
+          });
+          parsed.push(row);
+        }
+      }
+      
+      // Validate and set preview
+      const validated = parsed.filter(item => item.question && item.answer);
+      setImportPreview(validated);
+      
+    } catch (error) {
+      console.error('Error parsing file:', error);
+      alert('Error parsing file. Please check the format.');
+      setImportFile(null);
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const handleConfirmImport = () => {
+    const newSources: KnowledgeSource[] = importPreview.map(item => ({
+      id: `ks-${Date.now()}-${Math.random()}`,
+      organizationId: 'org-001',
+      appliesTo: item.appliesto?.toLowerCase() === 'all' || !item.appliesto ? 'all' : [selectedPractice],
+      question: item.question,
+      answer: item.answer,
+      category: item.category?.toLowerCase() || 'general',
+      version: '1.0',
+      status: 'active' as const,
+      createdBy: 'admin@practice.com',
+      createdAt: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      updatedAt: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      versionHistory: [{
+        version: '1.0',
+        updatedAt: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        updatedBy: 'admin@practice.com',
+        changes: 'Imported from file'
+      }],
+      tags: item.tags ? item.tags.split(',').map((t: string) => t.trim()) : [],
+      languages: ['en']
+    }));
+    
+    setKnowledgeSources([...knowledgeSources, ...newSources]);
+    setImportOpen(false);
+    setImportFile(null);
+    setImportPreview([]);
+    alert(`Successfully imported ${newSources.length} knowledge sources!`);
+  };
+
+  const handleImportArticle = () => {
+    console.log('Import Article clicked', { 
+      articleTitle, 
+      articleBody: articleBody.substring(0, 100),
+      currentSourcesCount: knowledgeSources.length
+    });
+    
+    if (!articleTitle.trim() || !articleBody.trim()) {
+      alert('Please provide both title and article body');
+      return;
+    }
+
+    const newSource: KnowledgeSource = {
+      id: `ks-article-${Date.now()}`,
+      organizationId: 'org-001',
+      appliesTo: articleAppliesTo === 'all' ? 'all' : articlePractices,
+      question: articleTitle,
+      answer: articleBody,
+      category: articleCategory,
+      version: '1.0',
+      status: 'active',
+      createdBy: articleAuthor || 'admin@practice.com',
+      createdAt: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      updatedAt: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      versionHistory: [{
+        version: '1.0',
+        updatedAt: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        updatedBy: articleAuthor || 'admin@practice.com',
+        changes: 'Initial article import'
+      }],
+      tags: [...(articleTags.split(',').map(t => t.trim()).filter(t => t)), 'imported-article'],
+      languages: [articleLanguage]
+    };
+
+    console.log('Creating new article source:', {
+      id: newSource.id,
+      question: newSource.question,
+      category: newSource.category,
+      appliesTo: newSource.appliesTo,
+      status: newSource.status,
+      tags: newSource.tags
+    });
+    
+    const updatedSources = [...knowledgeSources, newSource];
+    console.log('Updated sources count:', updatedSources.length);
+    setKnowledgeSources(updatedSources);
+    
+    resetArticleForm();
+    setImportOpen(false);
+    
+    setTimeout(() => {
+      alert(`Article "${articleTitle}" imported successfully! Check the Knowledge Sources table under "${articleCategory}" category.`);
+    }, 100);
+  };
+
+  const resetArticleForm = () => {
+    setArticleTitle('');
+    setArticleBody('');
+    setArticleCategory('general');
+    setArticleAppliesTo('all');
+    setArticlePractices([]);
+    setArticleTags('');
+    setArticleAudience('');
+    setArticleCondition('');
+    setArticleLanguage('en');
+    setArticleAuthor('');
+    setArticleSource('');
+    setArticleReviewDate('');
+  };
+
+  const handleToggleArticlePractice = (practiceId: string) => {
+    setArticlePractices(prev => 
+      prev.includes(practiceId) 
+        ? prev.filter(id => id !== practiceId)
+        : [...prev, practiceId]
+    );
+  };
+
+  const processFile = async (file: File) => {
+    setUploadingFile(true);
+    
+    try {
+      // For simple text files, process client-side
+      const fileType = file.name.split('.').pop()?.toLowerCase();
+      
+      let extractedText = '';
+      
+      if (fileType === 'txt') {
+        extractedText = await file.text();
+        const lines = extractedText.split('\n').filter(line => line.trim());
+        
+        // Try to extract title from first line if it's short
+        if (!articleTitle && lines.length > 0 && lines[0].trim().length < 100) {
+          setArticleTitle(lines[0].trim());
+          extractedText = lines.slice(1).join('\n').trim();
+        }
+      } 
+      else if (fileType === 'pdf' || fileType === 'doc' || fileType === 'docx') {
+        // For PDF and DOCX files, send to server for processing
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        const response = await fetch(
+          `https://${projectId}.supabase.co/functions/v1/make-server-66fdb7c0/process-file`,
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${publicAnonKey}`
+            },
+            body: formData
+          }
+        );
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to process file');
+        }
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          setArticleTitle(result.title);
+          extractedText = result.body;
+          console.log(`${fileType.toUpperCase()} file processed successfully: ${result.body.length} characters`);
+        } else {
+          throw new Error(result.error || 'Failed to extract text from file');
+        }
+      }
+      else {
+        throw new Error(`Unsupported file type: ${fileType}. Please use TXT, PDF, or DOCX files.`);
+      }
+      
+      // Clean up whitespace
+      extractedText = extractedText.trim().replace(/\s+/g, ' ');
+      
+      if (extractedText.length > 0) {
+        setArticleBody(extractedText);
+        
+        // Auto-populate title from filename if still empty
+        if (!articleTitle) {
+          const titleFromFile = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
+          setArticleTitle(titleFromFile);
+        }
+        
+        console.log(`File processed successfully: ${extractedText.length} characters extracted`);
+      } else {
+        throw new Error('No text could be extracted from the file. Please paste the content manually.');
+      }
+    } catch (error) {
+      console.error('Error processing file:', error);
+      alert(`Error processing ${file.name}. ${error instanceof Error ? error.message : 'Please try again or paste the content manually.'}`);
+    } finally {
+      setUploadingFile(false);
+    }
+  };
+
+  const handleArticleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    
+    await processFile(file);
+    
+    // Reset file input
+    event.target.value = '';
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      await processFile(file);
+    }
+  };
+
   const filteredSources = getFilteredSources();
 
   return (
@@ -495,11 +787,15 @@ export function TenantKnowledgeHub() {
         <div>
           <div className="flex items-center gap-2 mb-2">
             <Building2 className="w-6 h-6 text-blue-600" />
-            <h2>Healthcare Partners Medical Group</h2>
+            <h2>Knowledge Hub</h2>
           </div>
-          <p className="text-gray-600">Manage knowledge sources across 6 practices</p>
         </div>
       </div>
+
+      <InfoBanner 
+        title="What is this section used for?"
+        description="View and manage knowledge sources from a tenant-wide perspective. Filter and browse content across multiple practice locations, import articles and documents with AI extraction, and test the AI's understanding of your knowledge base with the built-in testing interface."
+      />
 
       <Card>
         <CardContent className="py-4">
@@ -605,45 +901,6 @@ export function TenantKnowledgeHub() {
         </CardContent>
       </Card>
 
-      <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
-        <CardContent className="py-4">
-          <div className="flex items-start gap-3">
-            <Info className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-            <div className="flex-1">
-              <div className="text-sm mb-2">
-                {selectedPractice === 'all' 
-                  ? <><strong>Viewing All Practices:</strong> Knowledge sources can apply to all practices or be practice-specific</>
-                  : <><strong>Viewing {getCurrentPractice()?.name}:</strong> Showing org-wide + practice-specific knowledge sources</>
-                }
-              </div>
-              <div className="grid grid-cols-3 gap-4 text-xs">
-                <div className="flex items-start gap-2">
-                  <GitBranch className="w-3 h-3 mt-0.5 text-blue-600 flex-shrink-0" />
-                  <div>
-                    <div className="mb-0.5"><strong>Versioning</strong></div>
-                    <div className="text-gray-700">Track all changes with version history</div>
-                  </div>
-                </div>
-                <div className="flex items-start gap-2">
-                  <Building2 className="w-3 h-3 mt-0.5 text-purple-600 flex-shrink-0" />
-                  <div>
-                    <div className="mb-0.5"><strong>Multi-Practice</strong></div>
-                    <div className="text-gray-700">Apply FAQs to all or specific practices</div>
-                  </div>
-                </div>
-                <div className="flex items-start gap-2">
-                  <Globe className="w-3 h-3 mt-0.5 text-green-600 flex-shrink-0" />
-                  <div>
-                    <div className="mb-0.5"><strong>MedlinePlus</strong></div>
-                    <div className="text-gray-700">Optional per-practice health education</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
       <div className="flex justify-between items-center">
         <div className="text-sm text-gray-600">
           Showing {filteredSources.length} knowledge source{filteredSources.length !== 1 ? 's' : ''}
@@ -658,15 +915,302 @@ export function TenantKnowledgeHub() {
             </DialogTrigger>
           </Dialog>
 
-          <Button variant="outline">
-            <Upload className="w-4 h-4 mr-2" />
-            Bulk Import
-          </Button>
+          <Dialog open={importOpen} onOpenChange={(open) => { setImportOpen(open); if (!open) resetArticleForm(); }}>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <Upload className="w-4 h-4 mr-2" />
+                Import Article
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="!w-[98vw] !h-[95vh] !max-w-[98vw] !max-h-[95vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Import Patient Education Article</DialogTitle>
+                <DialogDescription>
+                  Add educational content that the AI can reference when responding to patients
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="space-y-6 py-4">
+                {/* Content Type Badge */}
+                <div className="flex items-center gap-2">
+                  <Label className="text-xs text-gray-600">Content Type:</Label>
+                  <Badge className="bg-blue-100 text-blue-700">
+                    <FileText className="w-3 h-3 mr-1" />
+                    Patient Education Article
+                  </Badge>
+                </div>
 
-          <Button variant="outline">
-            <Download className="w-4 h-4 mr-2" />
-            Export
-          </Button>
+                {/* Two Column Layout */}
+                <div className="grid grid-cols-2 gap-6">
+                  {/* Left Column */}
+                  <div className="space-y-4">
+                    {/* Title */}
+                    <div className="space-y-2">
+                      <Label>Title <span className="text-red-500">*</span></Label>
+                      <Input 
+                        placeholder="Article title or topic"
+                        value={articleTitle}
+                        onChange={(e) => setArticleTitle(e.target.value)}
+                      />
+                    </div>
+
+                    {/* Article Body */}
+                    <div className="space-y-2">
+                      <Label>Article Body <span className="text-red-500">*</span></Label>
+                      
+                      {/* Drag and Drop Zone */}
+                      <div
+                        onDragOver={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                        onDrop={handleDrop}
+                        className={`border-2 border-dashed rounded-lg p-4 transition-all ${
+                          isDragging 
+                            ? 'border-blue-500 bg-blue-50' 
+                            : 'border-gray-300 bg-gray-50'
+                        }`}
+                      >
+                        <div className="flex flex-col items-center justify-center gap-2 py-3">
+                          <Upload className={`w-8 h-8 ${isDragging ? 'text-blue-600' : 'text-gray-400'}`} />
+                          <div className="text-center">
+                            <p className="text-sm">
+                              {isDragging ? (
+                                <span className="text-blue-600">Drop file here</span>
+                              ) : (
+                                <>
+                                  <span>Drag & drop a file here, or </span>
+                                  <input
+                                    type="file"
+                                    id="article-file-upload"
+                                    accept=".txt,.pdf,.doc,.docx"
+                                    onChange={handleArticleFileUpload}
+                                    className="hidden"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => document.getElementById('article-file-upload')?.click()}
+                                    className="text-blue-600 hover:underline"
+                                  >
+                                    browse
+                                  </button>
+                                </>
+                              )}
+                            </p>
+                            <p className="text-xs text-gray-500 mt-1">
+                              Supports: TXT, PDF, Word (DOC/DOCX)
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Text Area for manual input/editing */}
+                      <Textarea 
+                        rows={6}
+                        placeholder="Or type/paste article content here..."
+                        value={articleBody}
+                        onChange={(e) => setArticleBody(e.target.value)}
+                        disabled={uploadingFile}
+                      />
+                      
+                      {uploadingFile && (
+                        <div className="flex items-center gap-2 text-sm text-blue-600">
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                          Processing file...
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Category */}
+                    <div className="space-y-2">
+                      <Label>Category</Label>
+                      <Select value={articleCategory} onValueChange={setArticleCategory}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="billing">Billing</SelectItem>
+                          <SelectItem value="clinical">Clinical</SelectItem>
+                          <SelectItem value="scheduling">Scheduling</SelectItem>
+                          <SelectItem value="general">General</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-gray-600">
+                        <Info className="w-3 h-3 inline mr-1" />
+                        Article will appear in the Knowledge Sources table under this category
+                      </p>
+                    </div>
+
+                    {/* Applies To */}
+                    <div className="space-y-2">
+                      <Label>Applies To</Label>
+                      <div className="p-4 border rounded-lg bg-gray-50 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Checkbox 
+                            id="article-apply-all"
+                            checked={articleAppliesTo === 'all'}
+                            onCheckedChange={(checked) => {
+                              setArticleAppliesTo(checked ? 'all' : 'specific');
+                              if (checked) setArticlePractices([]);
+                            }}
+                          />
+                          <Label htmlFor="article-apply-all" className="cursor-pointer">
+                            All Practices <Badge variant="outline" className="ml-2 text-xs">Organization-wide</Badge>
+                          </Label>
+                        </div>
+                        
+                        {articleAppliesTo === 'specific' && (
+                          <div className="ml-6 space-y-2 mt-3 max-h-32 overflow-y-auto">
+                            <div className="text-xs text-gray-600 mb-2">Select practices:</div>
+                            {practices.map(practice => (
+                              <div key={practice.id} className="flex items-center gap-2">
+                                <Checkbox 
+                                  id={`article-practice-${practice.id}`}
+                                  checked={articlePractices.includes(practice.id)}
+                                  onCheckedChange={() => handleToggleArticlePractice(practice.id)}
+                                />
+                                <Label htmlFor={`article-practice-${practice.id}`} className="cursor-pointer text-sm">
+                                  {practice.name}
+                                </Label>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Tags */}
+                    <div className="space-y-2">
+                      <Label>Tags (Keywords)</Label>
+                      <Input 
+                        placeholder="diabetes, medication, insulin"
+                        value={articleTags}
+                        onChange={(e) => setArticleTags(e.target.value)}
+                      />
+                      <p className="text-xs text-gray-500">Comma-separated keywords for search. "imported-article" tag will be added automatically.</p>
+                    </div>
+                  </div>
+
+                  {/* Right Column */}
+                  <div className="space-y-4">
+                    {/* Audience */}
+                    <div className="space-y-2">
+                      <Label>Audience</Label>
+                      <Input 
+                        placeholder="Adults, Seniors, Parents, etc."
+                        value={articleAudience}
+                        onChange={(e) => setArticleAudience(e.target.value)}
+                      />
+                    </div>
+
+                    {/* Condition/Topic */}
+                    <div className="space-y-2">
+                      <Label>Condition/Topic</Label>
+                      <Input 
+                        placeholder="Diabetes, Hypertension, Wellness, etc."
+                        value={articleCondition}
+                        onChange={(e) => setArticleCondition(e.target.value)}
+                      />
+                    </div>
+
+                    {/* Review Date */}
+                    <div className="space-y-2">
+                      <Label>Review Date</Label>
+                      <Input 
+                        type="date"
+                        value={articleReviewDate}
+                        onChange={(e) => setArticleReviewDate(e.target.value)}
+                      />
+                      <p className="text-xs text-gray-500">Next content review date</p>
+                    </div>
+
+                    {/* Source */}
+                    <div className="space-y-2">
+                      <Label>Source</Label>
+                      <Input 
+                        placeholder="Internal, CDC, Mayo Clinic, etc."
+                        value={articleSource}
+                        onChange={(e) => setArticleSource(e.target.value)}
+                      />
+                    </div>
+
+                    {/* Review Badge */}
+                    <div className="p-3 border rounded-lg bg-green-50 border-green-200">
+                      <div className="flex items-start gap-2">
+                        <Eye className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <div className="text-sm mb-1"><strong>Review Status</strong></div>
+                          <div className="text-xs text-gray-700">Content will be marked as reviewed on import</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* AI Preview Section */}
+                {articleTitle && articleBody && (
+                  <div className="border-t pt-6 space-y-3">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Sparkles className="w-5 h-5 text-purple-600" />
+                      <div><strong>AI Preview: How this will appear to patients</strong></div>
+                    </div>
+                    
+                    <Card className="bg-gradient-to-r from-purple-50 to-blue-50">
+                      <CardContent className="py-4">
+                        <div className="space-y-3">
+                          <div>
+                            <div className="text-sm mb-2">{articleTitle}</div>
+                            <div className="text-xs text-gray-700">
+                              {articleBody.substring(0, 200)}{articleBody.length > 200 ? '...' : ''}
+                            </div>
+                          </div>
+                          <Button variant="link" size="sm" className="text-blue-600 p-0 h-auto">
+                            Read more →
+                          </Button>
+                          {(articleAppliesTo === 'all' || articlePractices.length > 0) && (
+                            <div className="pt-3 border-t border-gray-200">
+                              <div className="text-xs text-gray-600 mb-2">
+                                <strong>Available at:</strong>
+                              </div>
+                              <div className="flex flex-wrap gap-2">
+                                {articleAppliesTo === 'all' ? (
+                                  <Badge variant="outline" className="text-xs">
+                                    <Building2 className="w-3 h-3 mr-1" />
+                                    All Practices
+                                  </Badge>
+                                ) : (
+                                  articlePractices.map(practiceId => {
+                                    const practice = practices.find(p => p.id === practiceId);
+                                    return practice ? (
+                                      <Badge key={practiceId} variant="outline" className="text-xs">
+                                        {practice.name}
+                                      </Badge>
+                                    ) : null;
+                                  })
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex justify-end gap-2 pt-4 border-t">
+                  <DialogClose asChild>
+                    <Button variant="outline">Cancel</Button>
+                  </DialogClose>
+                  <Button 
+                    onClick={handleImportArticle}
+                    disabled={!articleTitle.trim() || !articleBody.trim()}
+                  >
+                    <Check className="w-4 h-4 mr-2" />
+                    Import Article
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
@@ -705,7 +1249,15 @@ export function TenantKnowledgeHub() {
                       <TableRow key={source.id}>
                         <TableCell className="max-w-md">
                           <div>
-                            <div className="text-sm mb-1">{source.question}</div>
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-sm">{source.question}</span>
+                              {source.tags.includes('imported-article') && (
+                                <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700 border-purple-200">
+                                  <FileText className="w-3 h-3 mr-1" />
+                                  Article
+                                </Badge>
+                              )}
+                            </div>
                             <div className="text-xs text-gray-600 whitespace-normal">{source.answer}</div>
                           </div>
                         </TableCell>
@@ -1059,9 +1611,9 @@ export function TenantKnowledgeHub() {
                 variant="outline" 
                 size="sm" 
                 className="justify-start text-left h-auto py-3 px-3 whitespace-normal"
-                onClick={() => handleQuickTest('What is your address?')}
+                onClick={() => handleQuickTest('When is my next appointment?')}
               >
-                <span className="text-sm">What is your address?</span>
+                <span className="text-sm">When is my next appointment?</span>
               </Button>
               <Button 
                 variant="outline" 
