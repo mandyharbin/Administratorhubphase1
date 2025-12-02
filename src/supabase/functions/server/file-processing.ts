@@ -1,4 +1,7 @@
 import { Hono } from "npm:hono";
+import mammoth from "npm:mammoth@1.6.0";
+import pdfParse from "npm:pdf-parse@1.1.1";
+import { Buffer } from "node:buffer";
 
 const app = new Hono();
 
@@ -16,21 +19,19 @@ async function extractTextFromFile(file: File): Promise<{ title: string; body: s
       extractedText = await file.text();
     } else if (fileType === 'pdf') {
       // PDF - use pdf-parse library
-      const pdfParse = (await import('npm:pdf-parse@1.1.1')).default;
       const arrayBuffer = await file.arrayBuffer();
-      const buffer = new Uint8Array(arrayBuffer);
+      const buffer = Buffer.from(arrayBuffer);
       const data = await pdfParse(buffer);
       extractedText = data.text;
     } else if (fileType === 'doc' || fileType === 'docx') {
-      // Word document - basic text extraction
-      // For now, just read as text (docx are XML-based)
-      const text = await file.text();
-      // Try to extract text from XML structure
-      const textMatch = text.match(/<w:t[^>]*>([^<]+)<\/w:t>/g);
-      if (textMatch) {
-        extractedText = textMatch.map(m => m.replace(/<[^>]+>/g, '')).join(' ');
-      } else {
-        extractedText = text;
+      // Word document - use mammoth for proper extraction
+      const arrayBuffer = await file.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      const result = await mammoth.extractRawText({ buffer });
+      extractedText = result.value;
+      
+      if (result.messages.length > 0) {
+        console.log('Mammoth messages:', result.messages);
       }
     } else {
       throw new Error(`Unsupported file type: ${fileType}`);

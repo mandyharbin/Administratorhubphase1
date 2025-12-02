@@ -16,6 +16,7 @@
         'react-day-picker@8.10.1': 'react-day-picker',
         'pdf-parse@1.1.1': 'pdf-parse',
         'next-themes@0.4.6': 'next-themes',
+        'mammoth@1.6.0': 'mammoth',
         'lucide-react@0.487.0': 'lucide-react',
         'input-otp@1.4.2': 'input-otp',
         'figma:asset/dddbdc959a1381b093d3ffe86a91e2b8539fe8ac.png': path.resolve(__dirname, './src/assets/dddbdc959a1381b093d3ffe86a91e2b8539fe8ac.png'),

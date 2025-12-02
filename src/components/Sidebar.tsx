@@ -185,7 +185,7 @@ export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
 
       <div className="p-4 border-t border-gray-200">
         <div className="text-xs text-gray-500">
-          Version 1.0.0 (Phase 1)
+          Version 1.0.0
         </div>
       </div>
     </aside>
