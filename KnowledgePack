@@ -1,0 +1,347 @@
+{
+  "packs": [
+    {
+      "metadata": {
+        "id": "general-ambulatory-v1",
+        "name": "General Ambulatory Knowledge Pack",
+        "version": "1.0.0",
+        "intended_specialties": ["All"],
+        "description": "Starter pack for general ambulatory practices: appointment prep, office policies, refills, labs, and virtual visit basics.",
+        "last_review_date": "2025-12-08",
+        "language": "en-US"
+      },
+      "items": [
+        {
+          "id": "faq-what-to-bring",
+          "type": "faq",
+          "title": "What should I bring to my appointment?",
+          "question": "What should I bring to my appointment?",
+          "answer": "Please bring a valid photo ID, your insurance card, a list of current medications, and any relevant medical records or referrals. Arrive 10–15 minutes early to complete check-in paperwork if required.",
+          "category": "Appointment Prep",
+          "tags": {
+            "visit_types": ["All"],
+            "specialties": ["All"],
+            "locations": ["All"],
+            "topics": ["check-in", "documents", "new patient", "return visit"]
+          },
+          "safety_level": "administrative",
+          "requires_clinical_review": false,
+          "version": "1.0.0"
+        },
+        {
+          "id": "faq-how-early-arrive",
+          "type": "faq",
+          "title": "How early should I arrive for my appointment?",
+          "question": "How early should I arrive for my appointment?",
+          "answer": "We recommend arriving 10–15 minutes early to allow time for check-in, insurance verification, and any required forms.",
+          "category": "Appointment Prep",
+          "tags": {
+            "visit_types": ["All"],
+            "specialties": ["All"],
+            "topics": ["check-in", "arrivals"]
+          },
+          "safety_level": "administrative",
+          "requires_clinical_review": false,
+          "version": "1.0.0"
+        },
+        {
+          "id": "faq-medication-refills",
+          "type": "faq",
+          "title": "How do I request a medication refill?",
+          "question": "How do I request a medication refill?",
+          "answer": "Refill requests can be made through your pharmacy or by contacting our office. Most refill requests require 48–72 hours for processing. Some refills may require an appointment if you have not been seen recently.",
+          "category": "Medication Refills",
+          "tags": {
+            "visit_types": ["Follow-up", "Chronic Care"],
+            "specialties": ["Primary Care", "Family Medicine", "Internal Medicine"],
+            "topics": ["refills", "medications"]
+          },
+          "safety_level": "low_clinical",
+          "requires_clinical_review": true,
+          "version": "1.0.0"
+        },
+        {
+          "id": "faq-lab-results",
+          "type": "faq",
+          "title": "How do I access my lab results?",
+          "question": "How do I access my lab results?",
+          "answer": "Lab results are typically available in your patient portal once they have been reviewed by your provider. If you do not see your results within 3–5 business days, please contact our office.",
+          "category": "Labs",
+          "tags": {
+            "visit_types": ["Follow-up"],
+            "specialties": ["All"],
+            "topics": ["lab results", "portal"]
+          },
+          "safety_level": "administrative",
+          "requires_clinical_review": false,
+          "version": "1.0.0"
+        },
+        {
+          "id": "faq-cancellation-policy",
+          "type": "faq",
+          "title": "What is your cancellation or no-show policy?",
+          "question": "What is your cancellation or no-show policy?",
+          "answer": "We ask that patients cancel at least 24 hours in advance. Missed appointments or late cancellations may result in a fee depending on our practice policy.",
+          "category": "Policies",
+          "tags": {
+            "visit_types": ["All"],
+            "specialties": ["All"],
+            "topics": ["cancellations", "no-show", "fees"]
+          },
+          "safety_level": "administrative",
+          "requires_clinical_review": false,
+          "version": "1.0.0"
+        },
+        {
+          "id": "faq-running-late",
+          "type": "faq",
+          "title": "What should I do if I am running late?",
+          "question": "What should I do if I am running late?",
+          "answer": "Please call the office as soon as possible if you are running late. Depending on how late you are, we may need to reschedule your visit or adjust your appointment time.",
+          "category": "Scheduling",
+          "tags": {
+            "visit_types": ["All"],
+            "specialties": ["All"],
+            "topics": ["late arrival", "reschedule"]
+          },
+          "safety_level": "administrative",
+          "requires_clinical_review": false,
+          "version": "1.0.0"
+        },
+        {
+          "id": "faq-virtual-visit-prep",
+          "type": "faq",
+          "title": "How do I prepare for a virtual visit?",
+          "question": "How do I prepare for a virtual visit?",
+          "answer": "For a virtual visit, please ensure you have a stable internet connection, a device with a camera and microphone, and a quiet, private space. Log in 5–10 minutes early to test your audio and video.",
+          "category": "Virtual Care",
+          "tags": {
+            "visit_types": ["Virtual Visit"],
+            "specialties": ["All"],
+            "topics": ["telehealth", "virtual visit", "technology"]
+          },
+          "safety_level": "administrative",
+          "requires_clinical_review": false,
+          "version": "1.0.0"
+        },
+        {
+          "id": "faq-insurance-accepted",
+          "type": "faq",
+          "title": "What insurance plans do you accept?",
+          "question": "What insurance plans do you accept?",
+          "answer": "We accept many major insurance plans. Because coverage can change, please contact your insurance provider or our office to confirm that your plan is in network before your visit.",
+          "category": "Insurance",
+          "tags": {
+            "visit_types": ["All"],
+            "specialties": ["All"],
+            "topics": ["insurance", "coverage", "in-network"]
+          },
+          "safety_level": "administrative",
+          "requires_clinical_review": false,
+          "version": "1.0.0"
+        },
+        {
+          "id": "doc-preparing-for-appointment",
+          "type": "document",
+          "title": "Preparing for Your Appointment",
+          "summary": "Patient-friendly guide to help you get ready for your visit.",
+          "body": "Preparing for your visit helps us provide the best care. Please bring a photo ID, your insurance card, and a list of your current medications, including doses. If applicable, bring any imaging, referral forms, or previous medical records. Arrive 10–15 minutes early for check-in. If you have symptoms, questions, or concerns, write them down beforehand so you do not forget to discuss them with your provider.",
+          "category": "Appointment Prep",
+          "tags": {
+            "visit_types": ["All"],
+            "specialties": ["All"],
+            "topics": ["check-in", "prep"]
+          },
+          "safety_level": "administrative",
+          "requires_clinical_review": false,
+          "version": "1.0.0"
+        },
+        {
+          "id": "doc-after-appointment",
+          "type": "document",
+          "title": "After Your Appointment — What to Expect",
+          "summary": "What patients should expect after an office visit.",
+          "body": "After your visit, you may receive follow-up instructions, prescriptions, or orders for labs or imaging. Please review these carefully in your patient portal or discharge paperwork. If you have questions about your instructions, contact our office. If your symptoms suddenly worsen, or you feel very unwell, seek immediate medical care.",
+          "category": "Follow-up",
+          "tags": {
+            "visit_types": ["All"],
+            "specialties": ["All"],
+            "topics": ["after visit", "follow-up"]
+          },
+          "safety_level": "low_clinical",
+          "requires_clinical_review": true,
+          "version": "1.0.0"
+        },
+        {
+          "id": "doc-understanding-referrals",
+          "type": "document",
+          "title": "Understanding Referrals",
+          "summary": "Overview of how referrals to specialists work.",
+          "body": "If your provider recommends that you see a specialist, our office may submit a referral on your behalf. Depending on your insurance, a referral approval may take several days. Once the referral is processed, the specialist’s office may contact you to schedule an appointment, or you may be asked to call them directly. If you have not heard about your referral after 7–10 business days, please contact our office.",
+          "category": "Referrals",
+          "tags": {
+            "visit_types": ["Consult", "Follow-up"],
+            "specialties": ["Primary Care", "Family Medicine", "Internal Medicine"],
+            "topics": ["referrals", "specialist"]
+          },
+          "safety_level": "administrative",
+          "requires_clinical_review": false,
+          "version": "1.0.0"
+        },
+        {
+          "id": "doc-how-to-contact-office",
+          "type": "document",
+          "title": "How to Contact Our Office",
+          "summary": "Information on how and when to contact the practice.",
+          "body": "You can reach our office by phone during normal business hours or by sending a secure message through your patient portal. Please use the portal for non-urgent questions, prescription refills, or follow-up questions about your care. We do not monitor messages 24/7. If you are experiencing a medical emergency, call 911 or go to the nearest emergency room.",
+          "category": "Communication",
+          "tags": {
+            "visit_types": ["All"],
+            "specialties": ["All"],
+            "topics": ["contact", "phone", "portal"]
+          },
+          "safety_level": "emergency_disclaimer_required",
+          "requires_clinical_review": true,
+          "version": "1.0.0"
+        }
+      ],
+      "default_disclaimers": {
+        "administrative": "This information is for general administrative purposes and may not reflect your specific situation. For questions about your care, please contact the office.",
+        "low_clinical": "This information is for general educational purposes only and is not a substitute for medical advice. Talk with your healthcare provider about your specific questions or condition.",
+        "emergency_disclaimer_required": "If you are experiencing a medical emergency, call 911 or go to the nearest emergency room. This information is not a substitute for emergency or urgent care."
+      }
+    },
+    {
+      "metadata": {
+        "id": "pediatrics-general-v1",
+        "name": "Pediatrics General Knowledge Pack",
+        "version": "1.0.0",
+        "intended_specialties": ["Pediatrics", "Family Medicine"],
+        "description": "Pediatric-focused FAQs and education for parents and caregivers: vaccines, well-child visits, common illnesses, and school/daycare forms.",
+        "last_review_date": "2025-12-08",
+        "language": "en-US"
+      },
+      "items": [
+        {
+          "id": "ped-faq-what-to-bring-child-visit",
+          "type": "faq",
+          "title": "What should I bring to my child’s visit?",
+          "question": "What should I bring to my child’s visit?",
+          "answer": "Please bring your child’s insurance card, a photo ID for the parent or guardian, any immunization records you have, and a list of any medications or vitamins your child takes. If your child has had recent care at another clinic or hospital, bring any discharge paperwork or test results if available.",
+          "category": "Appointment Prep",
+          "tags": {
+            "visit_types": ["Well-Child", "Sick Visit", "Follow-up"],
+            "specialties": ["Pediatrics", "Family Medicine"],
+            "topics": ["pediatrics", "prep", "records"]
+          },
+          "safety_level": "administrative",
+          "requires_clinical_review": false,
+          "version": "1.0.0"
+        },
+        {
+          "id": "ped-faq-vaccine-schedule",
+          "type": "faq",
+          "title": "How do I know which vaccines my child needs?",
+          "question": "How do I know which vaccines my child needs?",
+          "answer": "Your child’s provider follows recommended vaccine schedules based on age and health history. At each visit, we will review your child’s immunization record and let you know which vaccines are due. If you have questions between visits, please send us a message or call the office so we can review your child’s chart.",
+          "category": "Vaccines",
+          "tags": {
+            "visit_types": ["Well-Child"],
+            "specialties": ["Pediatrics", "Family Medicine"],
+            "topics": ["vaccines", "immunizations", "schedule"]
+          },
+          "safety_level": "clinical_education",
+          "requires_clinical_review": true,
+          "version": "1.0.0"
+        },
+        {
+          "id": "ped-faq-fever",
+          "type": "faq",
+          "title": "When should I worry about my child’s fever?",
+          "question": "When should I worry about my child’s fever?",
+          "answer": "Mild fevers are common in children and are often caused by infections like colds or viruses. Worrisome signs can include very high fever, trouble breathing, severe pain, dehydration, unusual sleepiness, or if your child seems very unwell. Because every child is different, please call our office or use nurse triage if you are concerned about a fever. For emergencies, such as difficulty breathing, confusion, or your child not waking up or responding, call 911 or go to the nearest emergency room.",
+          "category": "Common Illness",
+          "tags": {
+            "visit_types": ["Sick Visit"],
+            "specialties": ["Pediatrics", "Family Medicine"],
+            "topics": ["fever", "illness", "triage"]
+          },
+          "safety_level": "clinical_education",
+          "requires_clinical_review": true,
+          "version": "1.0.0"
+        },
+        {
+          "id": "ped-faq-school-forms",
+          "type": "faq",
+          "title": "How do I get school, daycare, or sports forms completed?",
+          "question": "How do I get school, daycare, or sports forms completed?",
+          "answer": "Please upload the form through your child’s patient portal or bring it to the office. Forms are usually completed within 5–7 business days. Some forms may require a recent well-child visit or physical exam. If your child has not been seen recently, we may ask you to schedule a visit before we can complete the paperwork.",
+          "category": "Forms and Paperwork",
+          "tags": {
+            "visit_types": ["Well-Child", "Sports Physical"],
+            "specialties": ["Pediatrics", "Family Medicine"],
+            "topics": ["school forms", "daycare", "sports"]
+          },
+          "safety_level": "administrative",
+          "requires_clinical_review": false,
+          "version": "1.0.0"
+        },
+        {
+          "id": "ped-faq-eating-and-drinking",
+          "type": "faq",
+          "title": "What should I do if my child is not eating or drinking well?",
+          "question": "What should I do if my child is not eating or drinking well?",
+          "answer": "Children often eat and drink less when they are sick, but it is important that they stay hydrated and have some nutrition. Offer small, frequent sips of fluids. If your child is having fewer wet diapers or pees much less than usual, seems very tired, or cannot keep fluids down, please contact our office. If your child shows signs of severe dehydration, such as no tears when crying, very dry mouth, or not urinating at all, seek urgent or emergency care.",
+          "category": "Common Illness",
+          "tags": {
+            "visit_types": ["Sick Visit"],
+            "specialties": ["Pediatrics", "Family Medicine"],
+            "topics": ["hydration", "feeding", "illness"]
+          },
+          "safety_level": "clinical_education",
+          "requires_clinical_review": true,
+          "version": "1.0.0"
+        },
+        {
+          "id": "ped-faq-well-child-schedule",
+          "type": "faq",
+          "title": "How often should my child have a well-child visit?",
+          "question": "How often should my child have a well-child visit?",
+          "answer": "In early childhood, well-child visits are more frequent and then space out as your child grows. Typical ages include newborn visits, then check-ups in the first year of life, toddler years, and annual visits for older children and teens. Your provider will tell you when your child is due for the next well-child visit. If you are unsure, please contact our office.",
+          "category": "Well-Child Care",
+          "tags": {
+            "visit_types": ["Well-Child"],
+            "specialties": ["Pediatrics", "Family Medicine"],
+            "topics": ["well-child", "check-up", "schedule"]
+          },
+          "safety_level": "clinical_education",
+          "requires_clinical_review": true,
+          "version": "1.0.0"
+        },
+        {
+          "id": "ped-doc-well-child-visit-overview",
+          "type": "document",
+          "title": "What Is a Well-Child Visit?",
+          "summary": "An overview for parents and caregivers about what to expect at a well-child visit.",
+          "body": "Well-child visits are regular check-ups that focus on your child’s growth, development, and overall health. During these visits, the provider will measure your child’s height, weight, and vital signs; review nutrition, sleep, behavior, and learning; and discuss safety and mental health. Vaccines may be given based on your child’s age and immunization schedule. This is also a great time to bring up any questions or concerns you have about your child’s development or behavior.",
+          "category": "Well-Child Care",
+          "tags": {
+            "visit_types": ["Well-Child"],
+            "specialties": ["Pediatrics", "Family Medicine"],
+            "topics": ["well-child", "preventive care"]
+          },
+          "safety_level": "clinical_education",
+          "requires_clinical_review": true,
+          "version": "1.0.0"
+        },
+        {
+          "id": "ped-doc-fever-basics",
+          "type": "document",
+          "title": "Fever in Children: Basic Information",
+          "summary": "General information for parents about fever in children.",
+          "body": "Fever is the body’s normal response to many infections and is very common in children. A fever alone does not always mean something serious is wrong. More important clues include how your child looks and acts, how they are eating and drinking, and whether they have trouble breathing, severe pain, or unusual sleepiness. You can help your child feel more comfortable by offering fluids, dressing them in light clothing, and using fever-reducing medicine only as directed by your child’s provider. Always follow dosing instructions carefully. If you are worried about your child or if your child appears very ill, contact our office or seek medical care.\n\nThis information is general and does not replace medical advice. For emergencies such as difficulty breathing, confusion, or your child not waking up or responding, call 911 or go to the nearest emergency room.",
+          "category": "Common Illness",
+          "tags": {
+            "visit_types": ["Sick Visit"],
+            "specialties": ["Pediatrics", "Family Medicine"],
+            "topics": ["fe]()
