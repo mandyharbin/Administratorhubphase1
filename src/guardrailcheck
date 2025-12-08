@@ -1,0 +1,19 @@
+{
+  "patient_id": "string",
+  "message_id": "string",
+  "message_text": "string",
+  "context": { "last_5_messages": [ ... ] },
+  "source": "mobile|web|chat"
+}
+
+Output:
+{
+  "action": "EMERGENCY|BLOCK|ROUTE_PROMPT|ROUTE_AUTOSEND|ALLOW",
+  "action_reason": "string", // e.g., "emergency_stroke_facial_droop", "forbidden_schedule_request"
+  "recommendation": { // what the caller should do
+     "response_text": "string",
+     "route_payload": { ... } // present when action includes routing
+  },
+  "confidence": 0.0-1.0,
+  "audit_event_id": "string"
+}
