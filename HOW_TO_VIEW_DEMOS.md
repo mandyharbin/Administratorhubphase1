@@ -190,10 +190,10 @@ You'll see a gallery showing 10 different demos. Each demo shows a different par
 
 Some demos need special test data:
 
-- **Phone verification code:** Always use `123456`
-- **Patient ID:** A long code the system uses internally (you don't need to remember this)
+- **Phone verification code:** Always use `123456` (for demo purposes only)
+- **Patient ID:** The demos use sample patient data automatically - you don't need to enter any patient IDs
 
-These are just for testing - in the real system, these would be real patient phone numbers and IDs.
+These are just for testing - in the real system, these would be real patient phone numbers and actual patient IDs from your records.
 
 ---
 

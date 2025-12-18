@@ -75,7 +75,7 @@
 
   ### 5. Test Credentials
 
-  **Important:** When trying the OTP (phone verification) demo, always use PIN: **`123456`**
+  **Important:** When trying the OTP (phone verification) demo, always use PIN: **`123456`** (for demo purposes only)
 
   All other demos work automatically with sample data.
 
