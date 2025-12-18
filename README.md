@@ -114,7 +114,7 @@
 
   - **[HOW_TO_VIEW_DEMOS.md](HOW_TO_VIEW_DEMOS.md)** - Non-technical guide for product managers
   - **[QUICK_START.md](QUICK_START.md)** - Detailed developer guide with full walkthrough
-  - **[src/DEMO_DOCUMENTATION.md](src/DEMO_DOCUMENTATION.md)** - Complete technical documentation
+  - **[src/DEMO_DOCUMENTATION.md](src/DEMO_DOCUMENTATION.md)** - Complete demo catalog with integration maps
 
   ## Technology Stack
 
