@@ -191,9 +191,9 @@ You'll see a gallery showing 10 different demos. Each demo shows a different par
 Some demos need special test data:
 
 - **Phone verification code:** Always use `123456` (for demo purposes only)
-- **Patient ID:** The demos use sample patient data automatically - you don't need to enter any patient IDs
+- **Patient medical records:** All demos that show patient data (FHIR Integration, Mobile Chat) automatically load sample patient records - you don't need to enter anything
 
-These are just for testing - in the real system, these would be real patient phone numbers and actual patient IDs from your records.
+These are just for testing - in the real system, these would be real patient phone numbers and actual patient records from your hospital system.
 
 ---
 

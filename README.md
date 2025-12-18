@@ -47,12 +47,12 @@
 
   When you first access the application, you'll see a login screen. 
 
-  **For demo purposes, use any email and password you want:**
-  - Email: `demo@example.com`
-  - Password: `demo123`
-  - Organization ID: `demo-org`
+  **Any email and password will work** (this is a demo with mock authentication):
+  - Email: `demo@example.com` (or any email)
+  - Password: `demo123` (or any password)
+  - Organization ID: `demo-org` (or any ID)
 
-  > **Why?** This is a demo environment with mock authentication - any credentials will work! Real authentication will be added in production.
+  > **Why?** This is a demo environment - any credentials will work! Real authentication will be added in production.
 
   ### 4. Accessing the Demos
 
@@ -75,7 +75,7 @@
 
   ### 5. Test Credentials
 
-  **Important:** When trying the OTP (phone verification) demo, always use PIN: **`123456`** (for demo purposes only)
+  **Important:** When trying the OTP (phone verification) demo, always use PIN: `123456` (for demo purposes only)
 
   All other demos work automatically with sample data.
 
