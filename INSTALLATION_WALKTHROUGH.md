@@ -116,9 +116,11 @@ Now for the exciting part - let's run it!
    ```
    VITE v6.3.5  ready in 500 ms
    
-   ➜  Local:   http://localhost:5173/
+   ➜  Local:   http://localhost:3000/
    ➜  Network: use --host to expose
    ```
+   
+   **Note:** The port might be 3000, 5173, or another number. Use whatever port the message shows!
 
 3. **Success!** The application is now running on your computer.
 
@@ -128,12 +130,16 @@ Now for the exciting part - let's run it!
 
 1. **Open your web browser** (Chrome, Firefox, Safari, or Edge)
 
-2. **Go to this address:**
+2. **Go to the address shown in your Terminal** - it will be something like:
+   ```
+   http://localhost:3000
+   ```
+   or
    ```
    http://localhost:5173
    ```
    
-   Or just click the link if your Terminal/Command Prompt makes it clickable!
+   Just click the link if your Terminal/Command Prompt makes it clickable, or copy and paste it into your browser!
 
 3. **You should see the login screen!** 🎉
 
@@ -175,8 +181,8 @@ Click on any demo card to try it out!
 ### To Start the App (after first installation):
 1. Open Terminal/Command Prompt
 2. Go to the project folder: `cd path/to/Administratorhubphase1`
-3. Run: `npm run dev`
-4. Open browser to: `http://localhost:5173`
+3. Run: `npm run dev` (or `npm run dev -- --port 5173` if you get port errors)
+4. Open browser to the URL shown in Terminal (usually `http://localhost:3000` or `http://localhost:5173`)
 
 ### To Stop the App:
 - Press `Ctrl+C` in the Terminal/Command Prompt where it's running
@@ -195,10 +201,16 @@ Click on any demo card to try it out!
 - Go back to Step 1 and reinstall Node.js
 - Make sure to close and reopen your Terminal/Command Prompt after installing
 
-### "Port 5173 is already in use"
-- The app is already running somewhere
-- Close any Terminal/Command Prompt windows that might be running it
-- Or try: `http://localhost:5174` (it might use the next port)
+### "Port 3000/5173 is already in use" or "permission denied" error
+- **Quick fix:** Try a different port:
+  ```bash
+  npm run dev -- --port 5173
+  ```
+- Or check what's using the port:
+  - Mac/Linux: `lsof -i :3000` or `lsof -i :5173`
+  - Windows: `netstat -ano | findstr :3000` or `netstat -ano | findstr :5173`
+- Close any other Terminal/Command Prompt windows that might be running the app
+- If the port shows as used by another app, either stop that app or use the command above to use a different port
 
 ### "Cannot find module"
 - The installation didn't complete
