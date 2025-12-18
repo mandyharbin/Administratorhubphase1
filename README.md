@@ -1,9 +1,33 @@
 
   # Administrator Hub Phase 1
 
-  This is a code bundle for Administrator Hub Phase 1. The original project is available at https://www.figma.com/design/xgKozUdAAY7BvS5dtpti3E/Administrator-Hub-Phase-1.
+  A healthcare platform with **10 interactive demos** showing patient apps, staff portals, AI assistants, medical records integration, billing, and more.
 
-  ## Quick Start: How to See This in Action
+  **Original design:** https://www.figma.com/design/xgKozUdAAY7BvS5dtpti3E/Administrator-Hub-Phase-1
+
+  ## 🎯 Quick Start: How to See This in Action
+
+  **Choose your path:**
+
+  - **👔 For Product Managers / Non-Technical Users** → See [HOW_TO_VIEW_DEMOS.md](HOW_TO_VIEW_DEMOS.md) - Simple, no-tech-jargon guide to explore the demos
+  - **👨‍💻 For Developers** → Continue reading below for technical setup instructions
+  - **📚 For Detailed Technical Docs** → See [QUICK_START.md](QUICK_START.md) for comprehensive developer guide
+
+  ### What You'll See
+
+  After setup, you'll log in and access the **Demo Hub** which shows:
+  
+  - 🤖 AI chatbot for patients
+  - 📱 Patient mobile app registration flow  
+  - 🏥 Staff portal with messages, appointments, and tasks
+  - 📊 Live medical records integration
+  - 💳 Patient billing and payments
+  - ⌚ Wearable device integration
+  - And 4 more interactive demos!
+
+  ---
+
+  ## For Developers: Technical Setup
 
   ### 1. Installation
 
@@ -21,70 +45,46 @@
 
   ### 3. Login
 
-  When you first access the application, you'll see a login screen. Use these credentials:
+  When you first access the application, you'll see a login screen. 
 
-  - **Email**: Any email (e.g., `admin@example.com`)
-  - **Password**: Any password (e.g., `password`)
-  - **Organization ID**: Any ID (e.g., `org-123`)
+  **For demo purposes, use any email and password you want:**
+  - Email: `demo@example.com`
+  - Password: `demo123`
+  - Organization ID: `demo-org`
 
-  > **Note**: The app currently uses mock authentication, so any credentials will work.
+  > **Why?** This is a demo environment with mock authentication - any credentials will work! Real authentication will be added in production.
 
   ### 4. Accessing the Demos
 
-  After logging in, you'll see the main dashboard. Here's how to explore the demos:
+  After logging in, look for **"Demo Hub"** in the left sidebar and click it.
 
-  #### Option A: Demo Hub (Recommended)
-  
-  1. Click **"Demo Hub"** in the left sidebar
-  2. You'll see a gallery of all available demos with descriptions
-  3. Click on any demo card to launch it interactively
+  You'll see a gallery with 10 demos:
 
-  **Available Demos:**
-  - **AI Assistant** - Patient-facing chatbot with knowledge base integration
-  - **Patient App Demo** - Complete mobile app experience with QR scanning and MFA
-  - **Unified Staff Portal** - EHR view with messages, patients, appointments, and tasks
-  - **FHIR Integration Demo** - Live FHIR data from Greenway Health staging endpoint
-  - **FHIR Mobile Chat Demo** - EHR-style mobile chat with AI and medical records
-  - **Appointment Reminder Demo** - Pre-visit workflow with medication review
-  - **Summarization Demo** - AI-powered chat summarization
-  - **OTP Migration Demo** - Phone verification flow (use PIN: `123456`)
-  - **Wearable Integration Demo** - Connect and view wearable device data
-  - **Billing Integration Demo** - Patient billing portal with FHIR integration
+  1. **AI Assistant** - Patient chatbot
+  2. **Patient App Demo** - Mobile registration  
+  3. **Unified Staff Portal** - Staff dashboard with messages & appointments
+  4. **FHIR Integration Demo** - Live medical records
+  5. **FHIR Mobile Chat Demo** - Patient medical queries
+  6. **Appointment Reminder Demo** - Pre-visit workflow
+  7. **Summarization Demo** - AI conversation summaries
+  8. **OTP Migration Demo** - Phone verification (use PIN: `123456`)
+  9. **Wearable Integration Demo** - Fitness device connection
+  10. **Billing Integration Demo** - Patient billing portal
 
-  #### Option B: Direct Navigation
+  **Click any demo card to launch it!**
 
-  You can also access specific sections directly from the sidebar:
-  - **Organization & Access** - Manage organization settings
-  - **Disclaimers & Consent** - Configure patient disclaimers
-  - **AI Responses** - Manage AI assistant behavior
-  - **Knowledge Sources** - Configure knowledge base
-  - **Forms & Templates** - Build FHIR-based forms and checklists
-  - And more...
+  ### 5. Test Credentials
 
-  ### 5. Demo Credentials & Test Data
+  **Important:** When trying the OTP (phone verification) demo, always use PIN: **`123456`**
 
-  When testing specific demos, use these credentials:
+  All other demos work automatically with sample data.
 
-  - **OTP Verification PIN**: `123456` (any other code will show an error)
-  - **FHIR Patient ID**: `0efed85b-e8a2-417b-a1f4-6a30fd74e7c2`
-  - **Greenway FHIR Endpoint**: `https://fhir.cloud.greenway.com/greenway-development/uscdi/r4`
+  ### 6. Recommended First Demos to Try
 
-  ### 6. What to Try
-
-  **For Patient Experience:**
-  1. Open the **Patient App Demo** to see the mobile onboarding flow
-  2. Try the **AI Assistant** and ask: "When is my next appointment?"
-  3. View the **FHIR Mobile Chat Demo** to see medical record queries
-
-  **For Staff/Clinical Experience:**
-  1. Open the **Unified Staff Portal** to see the complete EHR view
-  2. Navigate through Messages, Patients, Appointments, and Tasks tabs
-  3. Try the **Summarization Demo** to see AI-generated summaries
-
-  **For Technical/Integration:**
-  1. Check the **FHIR Integration Demo** to see live HealthLake data
-  2. View the **Wearable Integration Demo** for device connectivity
-  3. Explore the **Billing Integration Demo** for FHIR-based billing
+  **Start with these:**
+  1. **AI Assistant** - Type: "When is my next appointment?"
+  2. **Staff Portal** - Click through the Messages, Patients, Appointments, and Tasks tabs
+  3. **Patient App Demo** - See the complete patient registration flow
 
   ## Documentation
 
@@ -93,39 +93,34 @@
   - [`src/FHIR_INTEGRATION.md`](src/FHIR_INTEGRATION.md) - FHIR implementation details
   - [`src/PAYMENT_INTEGRATION_GUIDE.md`](src/PAYMENT_INTEGRATION_GUIDE.md) - Billing integration guide
 
-  ## Troubleshooting
+  ## Common Issues
 
-  **Q: The app won't start**
-  - Make sure you've run `npm i` first
-  - Check that port 5173 is not already in use
-  - Try clearing node_modules and reinstalling: `rm -rf node_modules && npm i`
+  **Can't see the demos?**
+  - Click "Demo Hub" in the left sidebar after logging in
+  - Try refreshing your browser
 
-  **Q: I can't see any demos**
-  - Make sure you've logged in first
-  - Click "Demo Hub" in the left sidebar
-  - Refresh the page if needed
+  **OTP verification not working?**
+  - You must use PIN: `123456` (any other code will fail - this is intentional for the demo)
 
-  **Q: FHIR Demo shows no data**
-  - The demo connects to Greenway Health's staging endpoint
-  - Patient ID must be: `0efed85b-e8a2-417b-a1f4-6a30fd74e7c2`
-  - Check your internet connection
+  **App won't start?** (For developers)
+  - Make sure you ran `npm i` first
+  - Check that port 5173 is available
 
-  **Q: OTP verification fails**
-  - You must use PIN: `123456`
-  - Any other code will show an error (this is by design for demo purposes)
+  ---
 
-  ## Development
+  ## Additional Resources
 
-  - **Framework**: React 18 + Vite
-  - **UI Components**: Radix UI + Tailwind CSS
-  - **Authentication**: Mock auth (Supabase ready)
-  - **External APIs**: Greenway Health FHIR R4, OpenAI GPT-4
+  - **[HOW_TO_VIEW_DEMOS.md](HOW_TO_VIEW_DEMOS.md)** - Non-technical guide for product managers
+  - **[QUICK_START.md](QUICK_START.md)** - Detailed developer guide with full walkthrough
+  - **[src/DEMO_DOCUMENTATION.md](src/DEMO_DOCUMENTATION.md)** - Complete technical documentation
+
+  ## Technology Stack
+
+  React 18, Vite, Radix UI, Tailwind CSS | Connects to: Greenway Health FHIR R4, OpenAI GPT-4
 
   ## Building for Production
 
   ```bash
   npm run build
   ```
-
-  The built files will be in the `dist` directory.
   
