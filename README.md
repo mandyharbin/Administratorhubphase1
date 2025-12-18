@@ -47,10 +47,12 @@
 
   When you first access the application, you'll see a login screen. 
 
-  **Any email and password will work** (this is a demo with mock authentication):
-  - Email: `demo@example.com` (or any email)
-  - Password: `demo123` (or any password)
-  - Organization ID: `demo-org` (or any ID)
+  **Any email and password will work** (this is a demo with mock authentication).
+  
+  Example credentials:
+  - Email: `demo@example.com`
+  - Password: `demo123`
+  - Organization ID: `demo-org`
 
   > **Why?** This is a demo environment - any credentials will work! Real authentication will be added in production.
 
@@ -116,7 +118,8 @@
 
   ## Technology Stack
 
-  React 18, Vite, Radix UI, Tailwind CSS | Connects to: Greenway Health FHIR R4, OpenAI GPT-4
+  **Built with:** React 18, Vite, Radix UI, Tailwind CSS  
+  **Integrates with:** Greenway Health FHIR R4, OpenAI GPT-4
 
   ## Building for Production
 
